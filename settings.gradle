@@ -1,0 +1,2 @@
+include ':app', ':fluxc', ':fluxc-annotations'
+rootProject.name='Plutonem-Fluxc-Android'
