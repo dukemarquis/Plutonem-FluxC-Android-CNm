@@ -68,8 +68,10 @@ public class AccountStore extends Store {
     private AccessToken mAccessToken;
 
     @Inject
-    public AccountStore(Dispatcher dispatcher, AccessToken accessToken) {
+    public AccountStore(Dispatcher dispatcher, AccountRestClient accountRestClient,
+                        AccessToken accessToken) {
         super(dispatcher);
+        mAccountRestClient = accountRestClient;
         mAccessToken = accessToken;
     }
 
