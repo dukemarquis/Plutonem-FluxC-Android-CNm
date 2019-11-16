@@ -1,4 +1,4 @@
-package com.plutonem.android.fluxc.network.rest.auth;
+package com.plutonem.android.fluxc.network.rest.plutonem.auth;
 
 import android.content.Context;
 import android.content.SharedPreferences;
