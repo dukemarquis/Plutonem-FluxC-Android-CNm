@@ -49,4 +49,10 @@ public class ReleaseNetworkModule {
                                                       AccessToken token, UserAgent userAgent) {
         return new AccountRestClient(appContext, dispatcher, requestQueue, token, userAgent);
     }
+
+    @Singleton
+    @Provides
+    public AccessToken provideAccountToken(Context appContext) {
+        return new AccessToken(appContext);
+    }
 }
