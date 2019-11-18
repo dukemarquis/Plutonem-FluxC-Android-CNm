@@ -2,9 +2,11 @@ package com.plutonem.android.fluxc.module;
 
 import javax.inject.Named;
 
+import dagger.Module;
 import dagger.Provides;
 import okhttp3.OkHttpClient;
 
+@Module
 public class ReleaseOkHttpClientModule {
     @Provides
     @Named("regular")
