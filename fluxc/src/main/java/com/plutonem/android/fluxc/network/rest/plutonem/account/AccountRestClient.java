@@ -13,10 +13,9 @@ import com.plutonem.android.fluxc.generated.endpoint.PLUTONEMREST;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.BasePlutonemRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest;
-import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.PlutonemGsonNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.PlutonemErrorListener;
+import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.PlutonemGsonNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
-import com.plutonem.android.fluxc.network.rest.plutonem.auth.AppSecrets;
 import com.plutonem.android.fluxc.store.AccountStore.IsAvailableError;
 
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import javax.inject.Singleton;
 
 @Singleton
 public class AccountRestClient extends BasePlutonemRestClient {
-    private final AppSecrets mAppSecrets;
 
     public static class IsAvailableResponsePayload extends Payload<IsAvailableError> {
         public IsAvailable type;
@@ -39,9 +37,8 @@ public class AccountRestClient extends BasePlutonemRestClient {
     }
 
     public AccountRestClient(Context appContext, Dispatcher dispatcher, RequestQueue requestQueue,
-                             AppSecrets appSecrets, AccessToken accessToken, UserAgent userAgent) {
+                             AccessToken accessToken, UserAgent userAgent) {
         super(appContext, dispatcher, requestQueue, accessToken, userAgent);
-        mAppSecrets = appSecrets;
     }
 
     public void isAvailable(@NonNull final String value, final IsAvailable type) {
@@ -72,7 +69,7 @@ public class AccountRestClient extends BasePlutonemRestClient {
                             if (response.error.equals("taken")) {
                                 // We consider "taken" not to be an error, and we report that the item is unavailable
                                 payload.isAvailable = false;
-                            }  else {
+                            } else {
                                 // Genuine error (probably a malformed item)
                                 payload.error = new IsAvailableError(response.error, response.message);
                             }
