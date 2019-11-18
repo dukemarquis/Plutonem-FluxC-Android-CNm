@@ -1,11 +1,18 @@
 package com.plutonem.android.fluxc.network.rest.plutonem;
 
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.plutonem.android.fluxc.network.rest.GsonRequest;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -71,5 +78,68 @@ public class PlutonemGsonRequest<T> extends GsonRequest<T> {
         } else {
             mHeaders.put(REST_AUTHORIZATION_HEADER, String.format(REST_AUTHORIZATION_FORMAT, token));
         }
+    }
+
+    @Override
+    public BaseNetworkError deliverBaseNetworkError(@NonNull BaseNetworkError error) {
+        PlutonemGsonNetworkError returnedError = new PlutonemGsonNetworkError(error);
+        if (error.hasVolleyError() && error.volleyError.networkResponse != null
+                && error.volleyError.networkResponse.statusCode >= 400) {
+            String jsonString;
+            try {
+                jsonString = new String(error.volleyError.networkResponse.data,
+                        HttpHeaderParser.parseCharset(error.volleyError.networkResponse.headers));
+            } catch (UnsupportedEncodingException e) {
+                jsonString = "";
+            }
+
+            JSONObject jsonObject;
+            try {
+                jsonObject = new JSONObject(jsonString);
+            } catch (JSONException e) {
+                jsonObject = new JSONObject();
+            }
+            String apiError = jsonObject.optString("error", "");
+            if (TextUtils.isEmpty(apiError)) {
+                // WP V2 endpoints use "code" instead of "error"
+                apiError = jsonObject.optString("code", "");
+            }
+            String apiMessage = jsonObject.optString("message", "");
+            if (TextUtils.isEmpty(apiMessage)) {
+                // Auth endpoints use "error_description" instead of "message"
+                apiMessage = jsonObject.optString("error_description", "");
+            }
+
+            // Augment BaseNetworkError by what we can parse from the response
+            returnedError.apiError = apiError;
+            returnedError.message = apiMessage;
+
+            // Check if we know this error
+//            if (apiError.equals("authorization_required") || apiError.equals("invalid_token")
+//                    || apiError.equals("access_denied") || apiError.equals("needs_2fa")) {
+//                AuthenticationError authError = new AuthenticationError(
+//                        Authenticator.wpComApiErrorToAuthenticationError(apiError, returnedError.message),
+//                        returnedError.message);
+//                AuthenticateErrorPayload payload = new AuthenticateErrorPayload(authError);
+//                mOnAuthFailedListener.onAuthFailed(payload);
+//            }
+
+//            if (JetpackTimeoutRequestHandler.isJetpackTimeoutError(returnedError)) {
+//                OnJetpackTimeoutError onJetpackTimeoutError = null;
+//                if (getMethod() == Method.GET && getParams() != null) {
+//                    onJetpackTimeoutError = new OnJetpackTimeoutError(getParams().get("path"), mNumManualRetries);
+//                } else if (getMethod() == Method.POST && getBodyAsMap() != null) {
+//                    Object pathValue = getBodyAsMap().get("path");
+//                    if (pathValue != null) {
+//                        onJetpackTimeoutError = new OnJetpackTimeoutError(pathValue.toString(), mNumManualRetries);
+//                    }
+//                }
+//                if (onJetpackTimeoutError != null) {
+//                    mOnJetpackTunnelTimeoutListener.onJetpackTunnelTimeout(onJetpackTimeoutError);
+//                }
+//            }
+        }
+
+        return returnedError;
     }
 }

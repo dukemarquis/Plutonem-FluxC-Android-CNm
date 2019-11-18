@@ -6,8 +6,10 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.network.BaseRequest;
+import com.plutonem.android.fluxc.network.BaseRequest.OnParseErrorListener;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
+import com.plutonem.android.fluxc.utils.ErrorUtils.OnUnexpectedError;
 
 import org.wordpress.android.util.LanguageUtils;
 
@@ -22,6 +24,8 @@ public abstract class BasePlutonemRestClient {
     protected final Context mAppContext;
     protected final Dispatcher mDispatcher;
     protected UserAgent mUserAgent;
+
+    private OnParseErrorListener mOnParseErrorListener;
 
 //    private OnParseErrorListener mOnParseErrorListener;
 
@@ -38,12 +42,12 @@ public abstract class BasePlutonemRestClient {
 //                mDispatcher.dispatch(AuthenticationActionBuilder.newAuthenticateErrorAction(authError));
 //            }
 //        };
-//        mOnParseErrorListener = new OnParseErrorListener() {
-//            @Override
-//            public void onParseError(OnUnexpectedError event) {
-//                mDispatcher.emitChange(event);
-//            }
-//        };
+        mOnParseErrorListener = new OnParseErrorListener() {
+            @Override
+            public void onParseError(OnUnexpectedError event) {
+                mDispatcher.emitChange(event);
+            }
+        };
 //        mOnJetpackTunnelTimeoutListener = new OnJetpackTunnelTimeoutListener() {
 //            @Override
 //            public void onJetpackTunnelTimeout(OnJetpackTimeoutError onTimeoutError) {
@@ -67,7 +71,7 @@ public abstract class BasePlutonemRestClient {
 
     private PlutonemGsonRequest setRequestAuthParams(PlutonemGsonRequest request, boolean shouldAuth) {
 //        request.setOnAuthFailedListener(mOnAuthFailedListener);
-//        request.setOnParseErrorListener(mOnParseErrorListener);
+        request.setOnParseErrorListener(mOnParseErrorListener);
 //        request.setOnJetpackTunnelTimeoutListener(mOnJetpackTunnelTimeoutListener);
         request.setUserAgent(mUserAgent.getUserAgent());
         request.setAccessToken(shouldAuth ? mAccessToken.get() : null);

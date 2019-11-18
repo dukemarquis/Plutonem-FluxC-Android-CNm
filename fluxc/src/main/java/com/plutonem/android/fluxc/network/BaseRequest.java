@@ -4,16 +4,26 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Cache;
 import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkError;
 import com.android.volley.NetworkResponse;
+import com.android.volley.NoConnectionError;
+import com.android.volley.ParseError;
 import com.android.volley.Request;
+import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.plutonem.android.fluxc.FluxCError;
+import com.plutonem.android.fluxc.utils.ErrorUtils.OnUnexpectedError;
+
+import org.wordpress.android.util.AppLog;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.SSLHandshakeException;
 
 public abstract class BaseRequest<T> extends Request<T> {
     public static final int DEFAULT_REQUEST_TIMEOUT = 30000;
@@ -23,13 +33,13 @@ public abstract class BaseRequest<T> extends Request<T> {
     public interface BaseErrorListener {
         void onErrorResponse(@NonNull BaseNetworkError error);
     }
-
-//    public interface OnParseErrorListener {
-//        void onParseError(OnUnexpectedError event);
-//    }
+    public interface OnParseErrorListener {
+        void onParseError(OnUnexpectedError event);
+    }
 
     private static final String USER_AGENT_HEADER = "User-Agent";
 
+    protected OnParseErrorListener mOnParseErrorListener;
     protected final Map<String, String> mHeaders = new HashMap<>(2);
     private BaseErrorListener mErrorListener;
 
@@ -117,6 +127,11 @@ public abstract class BaseRequest<T> extends Request<T> {
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
     }
 
+    @Override
+    public String getUrl() {
+        return mUri.toString();
+    }
+
     public void addQueryParameter(String key, String value) {
         mUri = mUri.buildUpon().appendQueryParameter(key, value).build();
     }
@@ -153,6 +168,15 @@ public abstract class BaseRequest<T> extends Request<T> {
 
     public void setUserAgent(String userAgent) {
         mHeaders.put(USER_AGENT_HEADER, userAgent);
+    }
+
+    @Override
+    public Map<String, String> getHeaders() {
+        return mHeaders;
+    }
+
+    public void setOnParseErrorListener(OnParseErrorListener onParseErrorListener) {
+        mOnParseErrorListener = onParseErrorListener;
     }
 
     /**
@@ -192,5 +216,73 @@ public abstract class BaseRequest<T> extends Request<T> {
         cacheEntry.softTtl = now + mCacheSoftTtl;
 
         return cacheEntry;
+    }
+
+    @NonNull
+    private BaseNetworkError getBaseNetworkError(VolleyError volleyError) {
+        // No connection
+        if (volleyError.getCause() instanceof NoConnectionError) {
+            return new BaseNetworkError(GenericErrorType.NO_CONNECTION, volleyError);
+        }
+
+        // Network error
+        if (volleyError.getCause() instanceof NetworkError) {
+            return new BaseNetworkError(GenericErrorType.NETWORK_ERROR, volleyError);
+        }
+
+        // Invalid SSL Handshake
+        if (volleyError.getCause() instanceof SSLHandshakeException) {
+            return new BaseNetworkError(GenericErrorType.INVALID_SSL_CERTIFICATE, volleyError);
+        }
+
+        // Invalid HTTP Auth
+        if (volleyError instanceof AuthFailureError) {
+            return new BaseNetworkError(GenericErrorType.HTTP_AUTH_ERROR, volleyError);
+        }
+
+        // Timeout
+        if (volleyError instanceof TimeoutError) {
+            return new BaseNetworkError(GenericErrorType.TIMEOUT, volleyError);
+        }
+
+        // Parse Error
+        if (volleyError instanceof ParseError) {
+            return new BaseNetworkError(GenericErrorType.PARSE_ERROR, volleyError);
+        }
+
+        // Null networkResponse? Can't get more infos
+        if (volleyError.networkResponse == null) {
+            return new BaseNetworkError(volleyError);
+        }
+
+        // Get Error by HTTP response code
+        switch (volleyError.networkResponse.statusCode) {
+            case 404:
+                return new BaseNetworkError(GenericErrorType.NOT_FOUND, volleyError.getMessage(), volleyError);
+            case 451:
+                return new BaseNetworkError(GenericErrorType.CENSORED, volleyError.getMessage(), volleyError);
+            case 500:
+                return new BaseNetworkError(GenericErrorType.SERVER_ERROR, volleyError.getMessage(), volleyError);
+            default:
+                break;
+        }
+
+        // Nothing found
+        return new BaseNetworkError(volleyError);
+    }
+
+    public abstract BaseNetworkError deliverBaseNetworkError(@NonNull BaseNetworkError error);
+
+    @Override
+    public final void deliverError(VolleyError volleyError) {
+        AppLog.e(AppLog.T.API, "Volley error on " + getUrl(), volleyError);
+        if (volleyError instanceof ParseError) {
+            OnUnexpectedError error = new OnUnexpectedError(volleyError, "API response parse error");
+            error.addExtra(OnUnexpectedError.KEY_URL, getUrl());
+            mOnParseErrorListener.onParseError(error);
+        }
+        BaseNetworkError baseNetworkError = getBaseNetworkError(volleyError);
+        BaseNetworkError modifiedBaseNetworkError = deliverBaseNetworkError(baseNetworkError);
+        mErrorListener.onErrorResponse(modifiedBaseNetworkError);
     }
 }
