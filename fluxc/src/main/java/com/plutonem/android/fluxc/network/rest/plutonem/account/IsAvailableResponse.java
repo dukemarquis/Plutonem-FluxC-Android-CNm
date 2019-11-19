@@ -5,5 +5,5 @@ import com.plutonem.android.fluxc.network.rest.JsonObjectOrFalse;
 public class IsAvailableResponse extends JsonObjectOrFalse {
     public String error;
     public String message;
-//    public String status;
+    public String status;
 }
