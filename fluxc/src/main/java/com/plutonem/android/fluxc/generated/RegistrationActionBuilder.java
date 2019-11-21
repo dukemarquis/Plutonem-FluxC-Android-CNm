@@ -9,7 +9,7 @@ public final class RegistrationActionBuilder extends ActionBuilder {
     public RegistrationActionBuilder() {
     }
 
-    public static Action<RegisterPayload> newAuthenticateAction(RegisterPayload payload) {
+    public static Action<RegisterPayload> newRegistrationAction(RegisterPayload payload) {
         return new Action(RegistrationAction.REGISTER, payload);
     }
 }
