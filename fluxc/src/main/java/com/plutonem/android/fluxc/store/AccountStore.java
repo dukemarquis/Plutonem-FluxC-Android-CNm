@@ -127,8 +127,9 @@ public class AccountStore extends Store {
 
     @Inject
     public AccountStore(Dispatcher dispatcher, AccountRestClient accountRestClient,
-                        AccessToken accessToken) {
+                        AccessToken accessToken, Registor registor) {
         super(dispatcher);
+        mRegistor = registor;
         mAccountRestClient = accountRestClient;
         mAccessToken = accessToken;
     }
