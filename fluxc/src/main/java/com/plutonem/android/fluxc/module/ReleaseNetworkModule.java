@@ -11,6 +11,7 @@ import com.plutonem.android.fluxc.network.OkHttpStack;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
+import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor;
 
 import java.io.File;
 
@@ -40,6 +41,13 @@ public class ReleaseNetworkModule {
     public RequestQueue provideRequestQueue(@Named("regular") OkHttpClient.Builder okHttpClientBuilder,
                                             Context appContext) {
         return newRequestQueue(okHttpClientBuilder, appContext);
+    }
+
+    @Singleton
+    @Provides
+    public Registor provideRegistor(Context appContext, Dispatcher dispatcher,
+                                         @Named("regular") RequestQueue requestQueue) {
+        return new Registor(appContext, dispatcher, requestQueue);
     }
 
     @Singleton
