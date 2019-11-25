@@ -5,9 +5,11 @@ import com.plutonem.android.fluxc.network.BaseRequest.BaseNetworkError;
 import com.yarolegovich.wellsql.core.Identifiable;
 import com.yarolegovich.wellsql.core.annotation.Column;
 import com.yarolegovich.wellsql.core.annotation.PrimaryKey;
+import com.yarolegovich.wellsql.core.annotation.Table;
 
 import org.wordpress.android.util.StringUtils;
 
+@Table
 public class AccountModel extends Payload<BaseNetworkError> implements Identifiable {
     @PrimaryKey(autoincrement = false)
     @Column private int mId;
