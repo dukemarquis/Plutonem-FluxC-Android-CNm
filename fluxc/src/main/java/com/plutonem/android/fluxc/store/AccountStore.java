@@ -10,17 +10,21 @@ import com.plutonem.android.fluxc.action.AuthenticationAction;
 import com.plutonem.android.fluxc.action.RegistrationAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.model.AccountModel;
 import com.plutonem.android.fluxc.network.BaseRequest.BaseNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient;
+import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient.AccountRestPayload;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient.IsAvailable;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient.IsAvailableResponsePayload;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor.Token;
+import com.plutonem.android.fluxc.persistence.AccountSqlUtils;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.wordpress.android.util.AppLog;
+import org.wordpress.android.util.AppLog.T;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -37,14 +41,35 @@ public class AccountStore extends Store {
         public String twoStepCode;
         public boolean shouldSendTwoStepSms;
         public Action nextAction;
+
         public RegisterPayload(@NonNull String phone, @NonNull String password) {
             this.phone = phone;
             this.password = password;
         }
     }
 
+    public static class AuthenticateErrorPayload extends Payload<AuthenticationError> {
+        public AuthenticateErrorPayload(@NonNull AuthenticationError error) {
+            this.error = error;
+        }
+
+        public AuthenticateErrorPayload(@NonNull AuthenticationErrorType errorType) {
+            this.error = new AuthenticationError(errorType, "");
+        }
+    }
+
     // OnChanged Events
+    public static class OnAccountChanged extends OnChanged<AccountError> {
+        public boolean accountInfosChanged;
+        public AccountAction causeOfChange;
+    }
+
     public static class OnRegistrationChanged extends OnChanged<RegistrationError> {
+        public String userName;
+        public boolean createdAccount;
+    }
+
+    public static class OnAuthenticationChanged extends OnChanged<AuthenticationError> {
         public String userName;
         public boolean createdAccount;
     }
@@ -64,7 +89,18 @@ public class AccountStore extends Store {
     public static class RegistrationError implements OnChangedError {
         public RegistrationErrorType type;
         public String message;
+
         public RegistrationError(RegistrationErrorType type, @NonNull String message) {
+            this.type = type;
+            this.message = message;
+        }
+    }
+
+    public static class AuthenticationError implements OnChangedError {
+        public AuthenticationErrorType type;
+        public String message;
+
+        public AuthenticationError(AuthenticationErrorType type, @NonNull String message) {
             this.type = type;
             this.message = message;
         }
@@ -91,6 +127,44 @@ public class AccountStore extends Store {
             }
             return GENERIC_ERROR;
         }
+    }
+
+    // Enums
+    public enum AuthenticationErrorType {
+        // From response's "error" field
+        AUTHORIZATION_REQUIRED,
+        INVALID_REQUEST,
+        INVALID_TOKEN,
+
+        // From response's "message" field - sadly... (be careful with i18n)
+        INCORRECT_USERNAME_OR_PASSWORD,
+
+        // Generic error
+        GENERIC_ERROR;
+
+        public static AuthenticationErrorType fromString(String string) {
+            if (string != null) {
+                for (AuthenticationErrorType v : AuthenticationErrorType.values()) {
+                    if (string.equalsIgnoreCase(v.name())) {
+                        return v;
+                    }
+                }
+            }
+            return GENERIC_ERROR;
+        }
+    }
+
+    public static class AccountError implements OnChangedError {
+        public AccountErrorType type;
+        public String message;
+        public AccountError(AccountErrorType type, @NonNull String message) {
+            this.type = type;
+            this.message = message;
+        }
+    }
+
+    public enum AccountErrorType {
+        ACCOUNT_FETCH_ERROR
     }
 
     public static class IsAvailableError implements OnChangedError {
@@ -123,6 +197,7 @@ public class AccountStore extends Store {
     // Fields
     private AccountRestClient mAccountRestClient;
     private Registor mRegistor;
+    private AccountModel mAccount;
     private AccessToken mAccessToken;
 
     @Inject
@@ -131,6 +206,7 @@ public class AccountStore extends Store {
         super(dispatcher);
         mRegistor = registor;
         mAccountRestClient = accountRestClient;
+        mAccount = loadAccount();
         mAccessToken = accessToken;
     }
 
@@ -146,16 +222,22 @@ public class AccountStore extends Store {
         if (actionType instanceof AccountAction) {
             onAccountAction((AccountAction) actionType, action.getPayload());
         }
-        if (actionType instanceof AuthenticationAction) {
-//            onAuthenticationAction((AuthenticationAction) actionType, action.getPayload());
-        }
         if (actionType instanceof RegistrationAction) {
             onRegistrationAction((RegistrationAction) actionType, action.getPayload());
+        }
+        if (actionType instanceof AuthenticationAction) {
+            onAuthenticationAction((AuthenticationAction) actionType, action.getPayload());
         }
     }
 
     private void onAccountAction(AccountAction actionType, Object payload) {
         switch (actionType) {
+            case FETCH_ACCOUNT:
+                mAccountRestClient.fetchAccount();
+                break;
+            case FETCHED_ACCOUNT:
+                handleFetchAccountCompleted((AccountRestPayload) payload);
+                break;
             case IS_AVAILABLE_PHONE:
                 mAccountRestClient.isAvailable((String) payload, IsAvailable.PHONE);
                 break;
@@ -173,6 +255,33 @@ public class AccountStore extends Store {
         }
     }
 
+    private void onAuthenticationAction(AuthenticationAction actionType, Object payload) {
+        switch (actionType) {
+            case AUTHENTICATE_ERROR:
+                handleAuthenticateError((AuthenticateErrorPayload) payload);
+                break;
+        }
+    }
+
+    private void handleAuthenticateError(AuthenticateErrorPayload payload) {
+        OnAuthenticationChanged event = new OnAuthenticationChanged();
+        event.error = payload.error;
+        emitChange(event);
+    }
+
+    private void handleFetchAccountCompleted(AccountRestPayload payload) {
+        if (!hasAccessToken()) {
+            emitAccountChangeError(AccountErrorType.ACCOUNT_FETCH_ERROR);
+            return;
+        }
+        if (!checkError(payload, "Error fetching Account via REST API (/me)")) {
+            mAccount.copyAccountAttributes(payload.account);
+            updateDefaultAccount(mAccount, AccountAction.FETCH_ACCOUNT);
+        } else {
+            emitAccountChangeError(AccountErrorType.ACCOUNT_FETCH_ERROR);
+        }
+    }
+
     private void handleCheckedIsAvailable(IsAvailableResponsePayload payload) {
         OnAvailabilityChecked event = new OnAvailabilityChecked(payload.type, payload.value, payload.isAvailable);
 
@@ -183,11 +292,32 @@ public class AccountStore extends Store {
         emitChange(event);
     }
 
+    private void emitAccountChangeError(AccountErrorType errorType) {
+        OnAccountChanged event = new OnAccountChanged();
+        event.error = new AccountError(errorType, "");
+        emitChange(event);
+    }
+
     /**
      * Can be used to check if Account is signed into Plutonem
      */
     public boolean hasAccessToken() {
         return mAccessToken.exists();
+    }
+
+    private void updateDefaultAccount(AccountModel accountModel, AccountAction cause) {
+        // Update memory instance
+        mAccount = accountModel;
+        AccountSqlUtils.insertOrUpdateDefaultAccount(accountModel);
+        OnAccountChanged accountChanged = new OnAccountChanged();
+        accountChanged.accountInfosChanged = true;
+        accountChanged.causeOfChange = cause;
+        emitChange(accountChanged);
+    }
+
+    private AccountModel loadAccount() {
+        AccountModel account = AccountSqlUtils.getDefaultAccount();
+        return account == null ? new AccountModel() : account;
     }
 
     private void register(final RegisterPayload payload) {
@@ -204,7 +334,7 @@ public class AccountStore extends Store {
                 }, new Registor.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError volleyError) {
-                        AppLog.e(AppLog.T.API, "Authentication error");
+                        AppLog.e(AppLog.T.API, "Registration error");
                         OnRegistrationChanged event = new OnRegistrationChanged();
                         event.error = new RegistrationError(
                                 Registor.volleyErrorToRegistrationError(volleyError),
@@ -212,5 +342,13 @@ public class AccountStore extends Store {
                         emitChange(event);
                     }
                 });
+    }
+
+    private boolean checkError(AccountRestPayload payload, String log) {
+        if (payload.isError()) {
+            AppLog.w(T.API, log + "\nError: " + payload.error.volleyError);
+            return true;
+        }
+        return false;
     }
 }

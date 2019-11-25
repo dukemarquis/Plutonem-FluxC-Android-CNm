@@ -6,6 +6,8 @@ import com.plutonem.android.fluxc.annotations.endpoint.PlutonemEndpoint;
 public class PLUTONEMREST {
     @Endpoint("/is-available/")
     public static PLUTONEMREST.Is_availableEndpoint is_available = new PLUTONEMREST.Is_availableEndpoint("/");
+    @Endpoint("/me/")
+    public static PLUTONEMREST.MeEndpoint me = new PLUTONEMREST.MeEndpoint("/");
 
     public PLUTONEMREST() {
     }
@@ -18,6 +20,14 @@ public class PLUTONEMREST {
         private Is_availableEndpoint(String previousEndpoint) {
             super(previousEndpoint + "is-available/");
             this.phone = new PlutonemEndpoint(this.getEndpoint() + "phone/");
+        }
+    }
+
+    public static class MeEndpoint extends PlutonemEndpoint {
+        private static final String ME_ENDPOINT = "me/";
+
+        private MeEndpoint(String previousEndpoint) {
+            super(previousEndpoint + "me/");
         }
     }
 }

@@ -5,10 +5,13 @@ import android.content.Context;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.plutonem.android.fluxc.Dispatcher;
+import com.plutonem.android.fluxc.generated.AuthenticationActionBuilder;
 import com.plutonem.android.fluxc.network.BaseRequest;
+import com.plutonem.android.fluxc.network.BaseRequest.OnAuthFailedListener;
 import com.plutonem.android.fluxc.network.BaseRequest.OnParseErrorListener;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
+import com.plutonem.android.fluxc.store.AccountStore.AuthenticateErrorPayload;
 import com.plutonem.android.fluxc.utils.ErrorUtils.OnUnexpectedError;
 
 import org.wordpress.android.util.LanguageUtils;
@@ -25,6 +28,7 @@ public abstract class BasePlutonemRestClient {
     protected final Dispatcher mDispatcher;
     protected UserAgent mUserAgent;
 
+    private OnAuthFailedListener mOnAuthFailedListener;
     private OnParseErrorListener mOnParseErrorListener;
 
 //    private OnParseErrorListener mOnParseErrorListener;
@@ -36,12 +40,12 @@ public abstract class BasePlutonemRestClient {
         mAccessToken = accessToken;
         mUserAgent = userAgent;
         mAppContext = appContext;
-//        mOnAuthFailedListener = new OnAuthFailedListener() {
-//            @Override
-//            public void onAuthFailed(AuthenticateErrorPayload authError) {
-//                mDispatcher.dispatch(AuthenticationActionBuilder.newAuthenticateErrorAction(authError));
-//            }
-//        };
+        mOnAuthFailedListener = new OnAuthFailedListener() {
+            @Override
+            public void onAuthFailed(AuthenticateErrorPayload authError) {
+                mDispatcher.dispatch(AuthenticationActionBuilder.newAuthenticateErrorAction(authError));
+            }
+        };
         mOnParseErrorListener = new OnParseErrorListener() {
             @Override
             public void onParseError(OnUnexpectedError event) {
@@ -70,7 +74,7 @@ public abstract class BasePlutonemRestClient {
     }
 
     private PlutonemGsonRequest setRequestAuthParams(PlutonemGsonRequest request, boolean shouldAuth) {
-//        request.setOnAuthFailedListener(mOnAuthFailedListener);
+        request.setOnAuthFailedListener(mOnAuthFailedListener);
         request.setOnParseErrorListener(mOnParseErrorListener);
 //        request.setOnJetpackTunnelTimeoutListener(mOnJetpackTunnelTimeoutListener);
         request.setUserAgent(mUserAgent.getUserAgent());

@@ -16,6 +16,7 @@ import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.plutonem.android.fluxc.FluxCError;
+import com.plutonem.android.fluxc.store.AccountStore.AuthenticateErrorPayload;
 import com.plutonem.android.fluxc.utils.ErrorUtils.OnUnexpectedError;
 
 import org.wordpress.android.util.AppLog;
@@ -30,6 +31,9 @@ public abstract class BaseRequest<T> extends Request<T> {
 
     public Uri mUri;
 
+    public interface OnAuthFailedListener {
+        void onAuthFailed(AuthenticateErrorPayload errorType);
+    }
     public interface BaseErrorListener {
         void onErrorResponse(@NonNull BaseNetworkError error);
     }
@@ -39,6 +43,7 @@ public abstract class BaseRequest<T> extends Request<T> {
 
     private static final String USER_AGENT_HEADER = "User-Agent";
 
+    protected OnAuthFailedListener mOnAuthFailedListener;
     protected OnParseErrorListener mOnParseErrorListener;
     protected final Map<String, String> mHeaders = new HashMap<>(2);
     private BaseErrorListener mErrorListener;
@@ -173,6 +178,10 @@ public abstract class BaseRequest<T> extends Request<T> {
     @Override
     public Map<String, String> getHeaders() {
         return mHeaders;
+    }
+
+    public void setOnAuthFailedListener(OnAuthFailedListener onAuthFailedListener) {
+        mOnAuthFailedListener = onAuthFailedListener;
     }
 
     public void setOnParseErrorListener(OnParseErrorListener onParseErrorListener) {

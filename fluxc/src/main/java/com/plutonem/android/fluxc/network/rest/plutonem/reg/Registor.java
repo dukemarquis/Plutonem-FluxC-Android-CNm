@@ -16,6 +16,7 @@ import com.plutonem.android.fluxc.store.AccountStore.RegistrationErrorType;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.wordpress.android.util.AppLog;
+import org.wordpress.android.util.AppLog.T;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -161,7 +162,7 @@ public class Registor {
                 JSONObject jsonObject = new JSONObject(jsonString);
                 return jsonObject.getString("error_description");
             } catch (JSONException e) {
-                AppLog.e(AppLog.T.API, e);
+                AppLog.e(T.API, e);
             }
         }
         return null;

@@ -2,6 +2,8 @@ package com.plutonem.android.fluxc.annotations.endpoint;
 
 public class PlutonemEndpoint {
     private static final String PLUTONEM_REST_PREFIX = " http://121.199.68.232:5004";
+    private static final String PN_PREFIX_V1_1 = PLUTONEM_REST_PREFIX + "/rest/v1.1";
+    private static final String PN_PREFIX_V0 = PLUTONEM_REST_PREFIX;
 
     private final String mEndpoint;
 
@@ -21,7 +23,11 @@ public class PlutonemEndpoint {
         return mEndpoint;
     }
 
+    public String getUrlV1_1() {
+        return PN_PREFIX_V1_1 + mEndpoint;
+    }
+
     public String getUrlV0() {
-        return PLUTONEM_REST_PREFIX + mEndpoint;
+        return PN_PREFIX_V0 + mEndpoint;
     }
 }

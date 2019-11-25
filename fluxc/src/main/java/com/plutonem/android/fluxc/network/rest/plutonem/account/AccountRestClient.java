@@ -8,8 +8,10 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.Payload;
+import com.plutonem.android.fluxc.action.AccountAction;
 import com.plutonem.android.fluxc.generated.AccountActionBuilder;
 import com.plutonem.android.fluxc.generated.endpoint.PLUTONEMREST;
+import com.plutonem.android.fluxc.model.AccountModel;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.BasePlutonemRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest;
@@ -18,6 +20,8 @@ import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.Plut
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
 import com.plutonem.android.fluxc.store.AccountStore.IsAvailableError;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +29,13 @@ import javax.inject.Singleton;
 
 @Singleton
 public class AccountRestClient extends BasePlutonemRestClient {
+    public static class AccountRestPayload extends Payload<PlutonemGsonNetworkError> {
+        public AccountRestPayload(AccountModel account, PlutonemGsonNetworkError error) {
+            this.account = account;
+            this.error = error;
+        }
+        public AccountModel account;
+    }
 
     public static class IsAvailableResponsePayload extends Payload<IsAvailableError> {
         public IsAvailable type;
@@ -39,6 +50,33 @@ public class AccountRestClient extends BasePlutonemRestClient {
     public AccountRestClient(Context appContext, Dispatcher dispatcher, RequestQueue requestQueue,
                              AccessToken accessToken, UserAgent userAgent) {
         super(appContext, dispatcher, requestQueue, accessToken, userAgent);
+    }
+
+    /**
+     * Performs an HTTP GET call to the v1.1 /me/ endpoint. Upon receiving a
+     * response (success or error) a {@link AccountAction#FETCHED_ACCOUNT} action is dispatched
+     * with a payload of type {@link AccountRestPayload}. {@link AccountRestPayload#isError()} can
+     * be used to determine the result of the request.
+     */
+    public void fetchAccount() {
+        String url = PLUTONEMREST.me.getUrlV1_1();
+        add(PlutonemGsonRequest.buildGetRequest(url, null, AccountResponse.class,
+                new Response.Listener<AccountResponse>() {
+                    @Override
+                    public void onResponse(AccountResponse response) {
+                        AccountModel account = responseToAccountModel(response);
+                        AccountRestPayload payload = new AccountRestPayload(account, null);
+                        mDispatcher.dispatch(AccountActionBuilder.newFetchedAccountAction(payload));
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+                        AccountRestPayload payload = new AccountRestPayload(null, error);
+                        mDispatcher.dispatch(AccountActionBuilder.newFetchedAccountAction(payload));
+                    }
+                }
+        ));
     }
 
     public void isAvailable(@NonNull final String value, final IsAvailable type) {
@@ -93,5 +131,16 @@ public class AccountRestClient extends BasePlutonemRestClient {
         );
 
         add(request);
+    }
+
+    private AccountModel responseToAccountModel(AccountResponse from) {
+        AccountModel account = new AccountModel();
+        account.setUserId(from.ID);
+        account.setDisplayName(StringEscapeUtils.unescapeHtml4(from.display_name));
+        account.setUserName(from.username);
+        account.setPhone(from.phone);
+        account.setDate(from.date);
+        account.setHasUnseenNotes(from.has_unseen_notes);
+        return account;
     }
 }

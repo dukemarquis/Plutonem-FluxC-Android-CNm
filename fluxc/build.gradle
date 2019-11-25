@@ -58,6 +58,10 @@ dependencies {
         exclude group: "com.android.support"
     }
 
+    // Custom WellSql version
+    api "org.wordpress:wellsql:$wellSqlVersion"
+    kapt "org.wordpress:wellsql-processor:$wellSqlVersion"
+
     // FluxC annotations
     api project(':fluxc-annotations')
 

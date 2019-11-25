@@ -8,6 +8,9 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.plutonem.android.fluxc.network.rest.GsonRequest;
+import com.plutonem.android.fluxc.network.rest.plutonem.auth.Authenticator;
+import com.plutonem.android.fluxc.store.AccountStore.AuthenticateErrorPayload;
+import com.plutonem.android.fluxc.store.AccountStore.AuthenticationError;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -115,14 +118,13 @@ public class PlutonemGsonRequest<T> extends GsonRequest<T> {
             returnedError.message = apiMessage;
 
             // Check if we know this error
-//            if (apiError.equals("authorization_required") || apiError.equals("invalid_token")
-//                    || apiError.equals("access_denied") || apiError.equals("needs_2fa")) {
-//                AuthenticationError authError = new AuthenticationError(
-//                        Authenticator.wpComApiErrorToAuthenticationError(apiError, returnedError.message),
-//                        returnedError.message);
-//                AuthenticateErrorPayload payload = new AuthenticateErrorPayload(authError);
-//                mOnAuthFailedListener.onAuthFailed(payload);
-//            }
+            if (apiError.equals("authorization_required") || apiError.equals("invalid_token")) {
+                AuthenticationError authError = new AuthenticationError(
+                        Authenticator.pnApiErrorToAuthenticationError(apiError, returnedError.message),
+                        returnedError.message);
+                AuthenticateErrorPayload payload = new AuthenticateErrorPayload(authError);
+                mOnAuthFailedListener.onAuthFailed(payload);
+            }
 
 //            if (JetpackTimeoutRequestHandler.isJetpackTimeoutError(returnedError)) {
 //                OnJetpackTimeoutError onJetpackTimeoutError = null;
