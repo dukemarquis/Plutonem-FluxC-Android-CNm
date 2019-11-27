@@ -79,6 +79,33 @@ public class AccountRestClient extends BasePlutonemRestClient {
         ));
     }
 
+    /**
+     * Performs an HTTP GET call to the v1.1 /me/settings/ endpoint. Upon receiving
+     * a response (success or error) a {@link AccountAction#FETCHED_SETTINGS} action is dispatched
+     * with a payload of type {@link AccountRestPayload}. {@link AccountRestPayload#isError()} can
+     * be used to determine the result of the request.
+     */
+    public void fetchAccountSettings() {
+        String url = PLUTONEMREST.me.settings.getUrlV1_1();
+        add(PlutonemGsonRequest.buildGetRequest(url, null, AccountSettingsResponse.class,
+                new Response.Listener<AccountSettingsResponse>() {
+                    @Override
+                    public void onResponse(AccountSettingsResponse response) {
+                        AccountModel settings = responseToAccountSettingsModel(response);
+                        AccountRestPayload payload = new AccountRestPayload(settings, null);
+                        mDispatcher.dispatch(AccountActionBuilder.newFetchedSettingsAction(payload));
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+                        AccountRestPayload payload = new AccountRestPayload(null, error);
+                        mDispatcher.dispatch(AccountActionBuilder.newFetchedSettingsAction(payload));
+                    }
+                }
+        ));
+    }
+
     public void isAvailable(@NonNull final String value, final IsAvailable type) {
         String url = "";
         switch (type) {
@@ -141,6 +168,12 @@ public class AccountRestClient extends BasePlutonemRestClient {
         account.setPhone(from.phone);
         account.setDate(from.date);
         account.setHasUnseenNotes(from.has_unseen_notes);
+        return account;
+    }
+
+    private AccountModel responseToAccountSettingsModel(AccountSettingsResponse from) {
+        AccountModel account = new AccountModel();
+        account.setPrimaryBuyerId(from.primary_buyer_ID);
         return account;
     }
 }

@@ -25,9 +25,12 @@ public class PLUTONEMREST {
 
     public static class MeEndpoint extends PlutonemEndpoint {
         private static final String ME_ENDPOINT = "me/";
+        @Endpoint("/me/settings/")
+        public PlutonemEndpoint settings;
 
         private MeEndpoint(String previousEndpoint) {
             super(previousEndpoint + "me/");
+            this.settings = new PlutonemEndpoint(this.getEndpoint() + "settings/");
         }
     }
 }

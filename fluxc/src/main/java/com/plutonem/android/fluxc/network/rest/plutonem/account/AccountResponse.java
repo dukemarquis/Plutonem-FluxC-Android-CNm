@@ -3,7 +3,7 @@ package com.plutonem.android.fluxc.network.rest.plutonem.account;
 import com.plutonem.android.fluxc.network.Response;
 
 /**
- * Stores data retrieved from the WordPress.com REST API Account endpoint (/me). Field names
+ * Stores data retrieved from the Plutonem REST API Account endpoint (/me). Field names
  * correspond to REST response keys.
  *
  * See <a href="https://developer.wordpress.com/docs/api/1.1/get/me/">documentation</a>

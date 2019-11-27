@@ -11,6 +11,8 @@ public enum AccountAction implements IAction {
     // Remote actions
     @Action
     FETCH_ACCOUNT,          // request fetch of Account information
+    @Action
+    FETCH_SETTINGS,         // request fetch of Account Settings
     @Action(payloadType = String.class)
     IS_AVAILABLE_PHONE,
     @Action(payloadType = IsAvailableResponsePayload.class)
@@ -18,5 +20,7 @@ public enum AccountAction implements IAction {
 
     // Remote responses
     @Action(payloadType = AccountRestPayload.class)
-    FETCHED_ACCOUNT        // response received from Account fetch request
+    FETCHED_ACCOUNT,        // response received from Account fetch request
+    @Action(payloadType = AccountRestPayload.class)
+    FETCHED_SETTINGS        // response received from Account Settings fetch
 }

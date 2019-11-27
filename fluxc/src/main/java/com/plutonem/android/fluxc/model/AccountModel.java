@@ -18,6 +18,7 @@ public class AccountModel extends Payload<BaseNetworkError> implements Identifia
     @Column private String mUserName;
     @Column private long mUserId;
     @Column private String mDisplayName;
+    @Column private long mPrimaryBuyerId;
     @Column private String mPhone;
     @Column private boolean mHasUnseenNotes;
 
@@ -49,6 +50,7 @@ public class AccountModel extends Payload<BaseNetworkError> implements Identifia
                 && StringUtils.equals(getUserName(), otherAccount.getUserName())
                 && getUserId() == otherAccount.getUserId()
                 && StringUtils.equals(getDisplayName(), otherAccount.getDisplayName())
+                && getPrimaryBuyerId() == otherAccount.getPrimaryBuyerId()
                 && StringUtils.equals(getDate(), otherAccount.getDate())
                 && getHasUnseenNotes() == otherAccount.getHasUnseenNotes();
     }
@@ -57,6 +59,7 @@ public class AccountModel extends Payload<BaseNetworkError> implements Identifia
         mUserName = "";
         mUserId = 0;
         mDisplayName = "";
+        mPrimaryBuyerId = 0;
         mPhone = "";
         mDate = "";
     }
@@ -78,9 +81,7 @@ public class AccountModel extends Payload<BaseNetworkError> implements Identifia
      */
     public void copyAccountSettingsAttributes(AccountModel other) {
         if (other == null) return;
-        setUserName(other.getUserName());
-        setDate(other.getDate());
-        setDisplayName(other.getDisplayName());
+        setPrimaryBuyerId(other.getPrimaryBuyerId());
     }
 
     public long getUserId() {
@@ -89,6 +90,14 @@ public class AccountModel extends Payload<BaseNetworkError> implements Identifia
 
     public void setUserId(long userId) {
         mUserId = userId;
+    }
+
+    public void setPrimaryBuyerId(long primaryBuyerId) {
+        mPrimaryBuyerId = primaryBuyerId;
+    }
+
+    public long getPrimaryBuyerId() {
+        return mPrimaryBuyerId;
     }
 
     public String getUserName() {

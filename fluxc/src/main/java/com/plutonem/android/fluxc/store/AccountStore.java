@@ -164,7 +164,9 @@ public class AccountStore extends Store {
     }
 
     public enum AccountErrorType {
-        ACCOUNT_FETCH_ERROR
+        ACCOUNT_FETCH_ERROR,
+        SETTINGS_FETCH_GENERIC_ERROR,
+        SETTINGS_FETCH_REAUTHORIZATION_REQUIRED_ERROR
     }
 
     public static class IsAvailableError implements OnChangedError {
@@ -235,6 +237,12 @@ public class AccountStore extends Store {
             case FETCH_ACCOUNT:
                 mAccountRestClient.fetchAccount();
                 break;
+            case FETCH_SETTINGS:
+                mAccountRestClient.fetchAccountSettings();
+                break;
+            case FETCHED_SETTINGS:
+                handleFetchSettingsCompleted((AccountRestPayload) payload);
+                break;
             case FETCHED_ACCOUNT:
                 handleFetchAccountCompleted((AccountRestPayload) payload);
                 break;
@@ -279,6 +287,35 @@ public class AccountStore extends Store {
             updateDefaultAccount(mAccount, AccountAction.FETCH_ACCOUNT);
         } else {
             emitAccountChangeError(AccountErrorType.ACCOUNT_FETCH_ERROR);
+        }
+    }
+
+    private void handleFetchSettingsCompleted(AccountRestPayload payload) {
+        if (!hasAccessToken()) {
+            emitAccountChangeError(AccountErrorType.SETTINGS_FETCH_GENERIC_ERROR);
+            return;
+        }
+        if (!checkError(payload, "Error fetching Account Settings via REST API (/me/settings)")) {
+            mAccount.copyAccountSettingsAttributes(payload.account);
+            updateDefaultAccount(mAccount, AccountAction.FETCH_SETTINGS);
+        }  else {
+            OnAccountChanged accountChanged = new OnAccountChanged();
+            accountChanged.causeOfChange = AccountAction.FETCH_SETTINGS;
+
+            AccountErrorType errorType;
+            if (payload.error.apiError.equals("reauthorization_required")) {
+                // This error will always occur for 2FA accounts when using a non-production Plutonem OAuth client.
+                // Essentially, some APIs around account management are disabled in those cases for security reasons.
+                // The error is a bit generic from the server-side - it essentially means the user isn't privileged to
+                // do the action and needs to reauthorize. For bearer token-based login, there is no escalation of
+                // privileges possible, so the request just fails at that point.
+                errorType = AccountErrorType.SETTINGS_FETCH_REAUTHORIZATION_REQUIRED_ERROR;
+            } else {
+                errorType = AccountErrorType.SETTINGS_FETCH_GENERIC_ERROR;
+            }
+            accountChanged.error = new AccountError(errorType, payload.error.message);
+
+            emitChange(accountChanged);
         }
     }
 
