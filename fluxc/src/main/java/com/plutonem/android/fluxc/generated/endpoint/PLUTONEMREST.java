@@ -27,10 +27,13 @@ public class PLUTONEMREST {
         private static final String ME_ENDPOINT = "me/";
         @Endpoint("/me/settings/")
         public PlutonemEndpoint settings;
+        @Endpoint("/me/buyers/")
+        public PlutonemEndpoint buyers;
 
         private MeEndpoint(String previousEndpoint) {
             super(previousEndpoint + "me/");
             this.settings = new PlutonemEndpoint(this.getEndpoint() + "settings/");
+            this.buyers = new PlutonemEndpoint(this.getEndpoint() + "buyers/");
         }
     }
 }
