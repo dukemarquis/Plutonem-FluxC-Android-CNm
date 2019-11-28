@@ -1,6 +1,9 @@
 package com.plutonem.android.fluxc;
 
 import org.greenrobot.eventbus.EventBus;
+import org.wordpress.android.util.AppLog;
+import org.wordpress.android.util.AppLog.T;
+
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.store.Store;
 
@@ -30,8 +33,8 @@ public class Dispatcher {
     }
 
     public void dispatch(Action action) {
-//        AppLog.d(T.API, "Dispatching action: " + action.getType().getClass().getSimpleName()
-//                + "-" + action.getType().toString());
+        AppLog.d(T.API, "Dispatching action: " + action.getType().getClass().getSimpleName()
+                + "-" + action.getType().toString());
         post(action);
     }
 

@@ -1,9 +1,11 @@
 package com.plutonem.android.fluxc.action;
 
 import com.plutonem.android.fluxc.annotations.Action;
+import com.plutonem.android.fluxc.annotations.ActionEnum;
 import com.plutonem.android.fluxc.annotations.action.IAction;
 import com.plutonem.android.fluxc.model.BuyersModel;
 
+@ActionEnum
 public enum BuyerAction implements IAction {
     // Remote actions
     @Action
@@ -11,5 +13,5 @@ public enum BuyerAction implements IAction {
 
     // Remote responses
     @Action(payloadType = BuyersModel.class)
-    FETCHED_BUYERS,
+    FETCHED_BUYERS
 }
