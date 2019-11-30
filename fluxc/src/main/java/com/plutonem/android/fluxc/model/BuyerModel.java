@@ -29,8 +29,14 @@ public class BuyerModel extends Payload<BaseNetworkError> implements Identifiabl
     @Column private int mId;
     // Only given a value for pn buyers
     @Column private long mBuyerId;
+    @Column private String mName;
+    @Column private String mDescription;
     @Column private boolean mIsPN;
     @Column private int mOrigin = ORIGIN_UNKNOWN; // Does this site come from a PN REST or XMLRPC fetch_buyers call?
+
+    // PN specifics
+    @Column private boolean mIsVisible = true;
+    @Column private String mIconUrl;
 
     @Override
     public int getId() {
@@ -53,12 +59,44 @@ public class BuyerModel extends Payload<BaseNetworkError> implements Identifiabl
         mBuyerId = siteId;
     }
 
+    public String getName() {
+        return mName;
+    }
+
+    public void setName(String name) {
+        mName = name;
+    }
+
+    public String getDescription() {
+        return mDescription;
+    }
+
+    public void setDescription(String description) {
+        mDescription = description;
+    }
+
     public boolean isPN() {
         return mIsPN;
     }
 
     public void setIsPN(boolean pn) {
         mIsPN = pn;
+    }
+
+    public boolean isVisible() {
+        return mIsVisible;
+    }
+
+    public void setIsVisible(boolean visible) {
+        mIsVisible = visible;
+    }
+
+    public String getIconUrl() {
+        return mIconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        mIconUrl = iconUrl;
     }
 
     @BuyerOrigin

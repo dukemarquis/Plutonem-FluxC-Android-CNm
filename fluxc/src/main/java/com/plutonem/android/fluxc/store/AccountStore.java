@@ -335,6 +335,10 @@ public class AccountStore extends Store {
         emitChange(event);
     }
 
+    public AccountModel getAccount() {
+        return mAccount;
+    }
+
     /**
      * Can be used to check if Account is signed into Plutonem
      */

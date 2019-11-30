@@ -1,5 +1,7 @@
 package com.plutonem.android.fluxc.store;
 
+import android.database.Cursor;
+
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.action.BuyerAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
@@ -10,11 +12,15 @@ import com.plutonem.android.fluxc.network.rest.plutonem.buyer.BuyerRestClient;
 import com.plutonem.android.fluxc.persistence.BuyerSqlUtils;
 import com.plutonem.android.fluxc.persistence.BuyerSqlUtils.DuplicateBuyerException;
 import com.plutonem.android.fluxc.utils.BuyerErrorUtils;
+import com.wellsql.generated.BuyerModelTable;
+import com.yarolegovich.wellsql.WellSql;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.wordpress.android.util.AppLog;
 import org.wordpress.android.util.AppLog.T;
+
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -74,6 +80,70 @@ public class BuyerStore extends Store {
         AppLog.d(T.API, "BuyerStore onRegister");
     }
 
+    /**
+     * Returns all sites in the store as a {@link BuyerModel} list.
+     */
+    public List<BuyerModel> getBuyers() {
+        return WellSql.select(BuyerModel.class).getAsModel();
+    }
+
+    /**
+     * Returns all buyers in the store as a {@link Cursor}.
+     */
+    public Cursor getBuyersCursor() {
+        return WellSql.select(BuyerModel.class).getAsCursor();
+    }
+
+    /**
+     * Returns the number of buyers of any kind in the store.
+     */
+    public int getBuyersCount() {
+        return getBuyersCursor().getCount();
+    }
+
+    /**
+     * Checks whether the store contains any buyers of any kind.
+     */
+    public boolean hasBuyer() {
+        return getBuyersCount() != 0;
+    }
+
+    /**
+     * Obtains the buyer with the given (local) id and returns it as a {@link BuyerModel}.
+     */
+    public BuyerModel getBuyerByLocalId(int id) {
+        List<BuyerModel> result = BuyerSqlUtils.getBuyersWith(BuyerModelTable.ID, id).getAsModel();
+        if (result.size() > 0) {
+            return result.get(0);
+        }
+        return null;
+    }
+
+    /**
+     * Returns all visible buyers as {@link BuyerModel}s.
+     */
+    public List<BuyerModel> getVisibleBuyers() {
+        return BuyerSqlUtils.getBuyersWith(BuyerModelTable.IS_VISIBLE, true).getAsModel();
+    }
+
+    /**
+     * Given a PN buyer ID, returns the buyer as a
+     * {@link BuyerModel}.
+     */
+    public BuyerModel getBuyerByBuyerId(long buyerId) {
+        if (buyerId == 0) {
+            return null;
+        }
+
+        List<BuyerModel> buyers = BuyerSqlUtils.getBuyersWith(BuyerModelTable.BUYER_ID, buyerId).getAsModel();
+
+        if (buyers.isEmpty()) {
+            return null;
+        } else {
+            return buyers.get(0);
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.ASYNC)
     @Override
     public void onAction(Action action) {
@@ -83,13 +153,40 @@ public class BuyerStore extends Store {
         }
 
         switch ((BuyerAction) actionType) {
+            case FETCH_BUYER:
+                fetchBuyer((BuyerModel) action.getPayload());
+                break;
             case FETCH_BUYERS:
                 mBuyerRestClient.fetchBuyers();
                 break;
             case FETCHED_BUYERS:
                 handleFetchedBuyersPNRest((BuyersModel) action.getPayload());
                 break;
+            case UPDATE_BUYER:
+                updateBuyer((BuyerModel) action.getPayload());
+                break;
         }
+    }
+
+    private void fetchBuyer(BuyerModel buyer) {
+        if (buyer.isUsingPnRestApi()) {
+            mBuyerRestClient.fetchBuyer(buyer);
+        }
+    }
+
+    private void updateBuyer(BuyerModel buyerModel) {
+        OnBuyerChanged event = new OnBuyerChanged(0);
+        if (buyerModel.isError()) {
+            // TODO: what kind of error could we get here?
+            event.error = BuyerErrorUtils.genericToBuyerError(buyerModel.error);
+        } else {
+            try {
+                event.rowsAffected = BuyerSqlUtils.insertOrUpdateBuyer(buyerModel);
+            } catch (DuplicateBuyerException e) {
+                event.error = new BuyerError(BuyerErrorType.DUPLICATE_BUYER);
+            }
+        }
+        emitChange(event);
     }
 
     private void handleFetchedBuyersPNRest(BuyersModel fetchedBuyers) {

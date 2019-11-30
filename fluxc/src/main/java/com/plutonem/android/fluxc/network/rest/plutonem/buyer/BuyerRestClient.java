@@ -21,6 +21,7 @@ import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.Plut
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
 import com.plutonem.android.fluxc.network.rest.plutonem.buyer.BuyerPNRestResponse.BuyersResponse;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.wordpress.android.util.AppLog;
 import org.wordpress.android.util.AppLog.T;
 
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BuyerRestClient extends BasePlutonemRestClient {
-    private static final String BUYER_FIELDS = "ID";
+    private static final String BUYER_FIELDS = "ID,name,description,visible,icon";
 
     public BuyerRestClient(Context appContext, Dispatcher dispatcher, RequestQueue requestQueue, AccessToken accessToken,
                            UserAgent userAgent) {
@@ -74,11 +75,54 @@ public class BuyerRestClient extends BasePlutonemRestClient {
         add(request);
     }
 
+    public void fetchBuyer(final BuyerModel buyer) {
+        Map<String, String> params = new HashMap<>();
+        params.put("fields", BUYER_FIELDS);
+        String url = PLUTONEMREST.buyers.getUrlV1_1() + buyer.getBuyerId();
+        final PlutonemGsonRequest<BuyerPNRestResponse> request = PlutonemGsonRequest.buildGetRequest(url, params,
+                BuyerPNRestResponse.class,
+                new Listener<BuyerPNRestResponse>() {
+                    @Override
+                    public void onResponse(BuyerPNRestResponse response) {
+                        if (response != null) {
+                            BuyerModel newBuyer = buyerResponseToBuyerModel(response);
+                            // local ID is not copied into the new model, let's make sure it is
+                            // otherwise the call that updates the DB can add a new row?
+                            if (buyer.getId() > 0) {
+                                newBuyer.setId(buyer.getId());
+                            }
+                            mDispatcher.dispatch(BuyerActionBuilder.newUpdateBuyerAction(newBuyer));
+                        } else {
+                            AppLog.e(T.API, "Received empty response to /buyers/$buyer/ for " + buyer.getBuyerId());
+                            BuyerModel payload = new BuyerModel();
+                            payload.error = new BaseNetworkError(GenericErrorType.INVALID_RESPONSE);
+                            mDispatcher.dispatch(BuyerActionBuilder.newUpdateBuyerAction(payload));
+                        }
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+                        BuyerModel payload = new BuyerModel();
+                        payload.error = error;
+                        mDispatcher.dispatch(BuyerActionBuilder.newUpdateBuyerAction(payload));
+                    }
+                }
+        );
+        add(request);
+    }
+
     // Utils
 
     private BuyerModel buyerResponseToBuyerModel(BuyerPNRestResponse from) {
         BuyerModel buyer = new BuyerModel();
         buyer.setBuyerId(from.ID);
+        buyer.setName(StringEscapeUtils.unescapeHtml4(from.name));
+        buyer.setDescription(StringEscapeUtils.unescapeHtml4(from.description));
+        buyer.setIsVisible(from.visible);
+        if (from.icon != null) {
+            buyer.setIconUrl(from.icon.img);
+        }
         buyer.setIsPN(true);
         buyer.setOrigin(BuyerModel.ORIGIN_PN_REST);
         return buyer;

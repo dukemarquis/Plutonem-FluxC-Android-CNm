@@ -9,5 +9,13 @@ public class BuyerPNRestResponse implements Response {
         public List<BuyerPNRestResponse> buyers;
     }
 
+    public class Icon {
+        public String img;
+    }
+
     public long ID;
+    public String name;
+    public String description;
+    public boolean visible;
+    public Icon icon;
 }

@@ -7,6 +7,8 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.plutonem.android.fluxc.Dispatcher;
+import com.plutonem.android.fluxc.network.HTTPAuthManager;
+import com.plutonem.android.fluxc.network.MemorizingTrustManager;
 import com.plutonem.android.fluxc.network.OkHttpStack;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient;
@@ -45,6 +47,14 @@ public class ReleaseNetworkModule {
     }
 
     @Singleton
+    @Named("custom-ssl")
+    @Provides
+    public RequestQueue provideRequestQueueCustomSSL(@Named("custom-ssl") OkHttpClient.Builder okHttpClientBuilder,
+                                                     Context appContext) {
+        return newRequestQueue(okHttpClientBuilder, appContext);
+    }
+
+    @Singleton
     @Provides
     public Registor provideRegistor(Context appContext, Dispatcher dispatcher,
                                          @Named("regular") RequestQueue requestQueue) {
@@ -71,5 +81,17 @@ public class ReleaseNetworkModule {
     @Provides
     public AccessToken provideAccountToken(Context appContext) {
         return new AccessToken(appContext);
+    }
+
+    @Singleton
+    @Provides
+    public HTTPAuthManager provideHTTPAuthManager() {
+        return new HTTPAuthManager();
+    }
+
+    @Singleton
+    @Provides
+    public MemorizingTrustManager provideMemorizingTrustManager(Context appContext) {
+        return new MemorizingTrustManager(appContext);
     }
 }

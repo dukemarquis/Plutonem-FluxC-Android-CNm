@@ -8,6 +8,7 @@ import com.plutonem.android.fluxc.model.AccountModel;
 import com.plutonem.android.fluxc.model.BuyerModel;
 import com.wellsql.generated.AccountModelTable;
 import com.wellsql.generated.BuyerModelTable;
+import com.yarolegovich.wellsql.SelectQuery;
 import com.yarolegovich.wellsql.WellSql;
 
 import org.wordpress.android.util.AppLog;
@@ -18,6 +19,11 @@ import java.util.List;
 
 public class BuyerSqlUtils {
     public static class DuplicateBuyerException extends Exception {
+    }
+
+    public static SelectQuery<BuyerModel> getBuyersWith(String field, Object value) {
+        return WellSql.select(BuyerModel.class)
+                .where().equals(field, value).endWhere();
     }
 
     /**
