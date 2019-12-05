@@ -7,6 +7,7 @@ import com.plutonem.android.fluxc.Payload;
 import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.model.BuyerModel;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.LocalId;
 import com.plutonem.android.fluxc.model.OrderModel;
@@ -69,7 +70,7 @@ public class OrderStore extends Store {
     }
 
     public List<OrderModel> getOrdersByLocalOrRemoteOrderIds(List<? extends LocalOrRemoteId> localOrRemoteIds,
-                                                             OrderModel buyer) {
+                                                             BuyerModel buyer) {
         if (localOrRemoteIds == null || buyer == null) {
             return Collections.emptyList();
         }
