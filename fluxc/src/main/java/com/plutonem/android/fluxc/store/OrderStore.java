@@ -7,7 +7,9 @@ import com.plutonem.android.fluxc.Payload;
 import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.model.LocalOrRemoteId;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.LocalId;
+import com.plutonem.android.fluxc.model.OrderModel;
 import com.plutonem.android.fluxc.model.list.ListOrder;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor.OrderListDescriptorForRestBuyer;
@@ -64,6 +66,14 @@ public class OrderStore extends Store {
     @Override
     public void onRegister() {
         AppLog.d(T.API, "OrderStore onRegister");
+    }
+
+    public List<OrderModel> getOrdersByLocalOrRemoteOrderIds(List<? extends LocalOrRemoteId> localOrRemoteIds,
+                                                             OrderModel buyer) {
+        if (localOrRemoteIds == null || buyer == null) {
+            return Collections.emptyList();
+        }
+        return mOrderSqlUtils.getOrdersByLocalOrRemoteOrderIds(localOrRemoteIds, buyer.getId());
     }
 
     /**
