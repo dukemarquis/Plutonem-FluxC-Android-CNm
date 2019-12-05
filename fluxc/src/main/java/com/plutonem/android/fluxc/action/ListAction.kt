@@ -8,5 +8,5 @@ import com.plutonem.android.fluxc.model.list.ListDescriptorTypeIdentifier
 @ActionEnum
 enum class ListAction : IAction {
     @Action(payloadType = ListDescriptorTypeIdentifier::class)
-    LIST_DATA_INVALIDATED,
+    LIST_DATA_INVALIDATED
 }

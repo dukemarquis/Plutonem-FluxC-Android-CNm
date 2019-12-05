@@ -1,8 +1,14 @@
 package com.plutonem.android.fluxc.store;
 
 import com.plutonem.android.fluxc.Dispatcher;
+import com.plutonem.android.fluxc.Payload;
+import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
+import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.model.list.OrderListDescriptor;
+import com.plutonem.android.fluxc.model.list.OrderListDescriptor.OrderListDescriptorForRestBuyer;
 import com.plutonem.android.fluxc.model.order.OrderStatus;
+import com.plutonem.android.fluxc.network.BaseRequest.BaseNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.order.OrderRestClient;
 import com.plutonem.android.fluxc.persistence.OrderSqlUtils;
 
@@ -25,6 +31,16 @@ public class OrderStore extends Store {
             OrderStatus.RECEIVING,
             OrderStatus.FINISHED));
 
+    public static class FetchOrderListPayload extends Payload<BaseNetworkError> {
+        public OrderListDescriptor listDescriptor;
+        public long offset;
+
+        public FetchOrderListPayload(OrderListDescriptor listDescriptor, long offset) {
+            this.listDescriptor = listDescriptor;
+            this.offset = offset;
+        }
+    }
+
     private final OrderRestClient mOrderRestClient;
     private final OrderSqlUtils mOrderSqlUtils;
     // Ensures that the UploadStore is initialized whenever the OrderStore is,
@@ -46,6 +62,22 @@ public class OrderStore extends Store {
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
     public void onAction(Action action) {
+        IAction actionType = action.getType();
+        if (!(actionType instanceof OrderAction)) {
+            return;
+        }
 
+        switch ((OrderAction) actionType) {
+            case FETCH_ORDER_LIST:
+                handleFetchOrderList((FetchOrderListPayload) action.getPayload());
+                break;
+        }
+    }
+
+    private void handleFetchOrderList(FetchOrderListPayload payload) {
+        if (payload.listDescriptor instanceof OrderListDescriptorForRestBuyer) {
+            OrderListDescriptorForRestBuyer descriptor = (OrderListDescriptorForRestBuyer) payload.listDescriptor;
+            mOrderRestClient.fetchOrderList(descriptor, payload.offset);
+        }
     }
 }
