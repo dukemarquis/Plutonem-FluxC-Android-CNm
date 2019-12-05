@@ -14,6 +14,7 @@ import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
 import com.plutonem.android.fluxc.network.rest.plutonem.buyer.BuyerRestClient;
+import com.plutonem.android.fluxc.network.rest.plutonem.order.OrderRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor;
 
 import java.io.File;
@@ -75,6 +76,14 @@ public class ReleaseNetworkModule {
                                                  @Named("regular") RequestQueue requestQueue,
                                                  AccessToken token, UserAgent userAgent) {
         return new AccountRestClient(appContext, dispatcher, requestQueue, token, userAgent);
+    }
+
+    @Singleton
+    @Provides
+    public OrderRestClient providePostRestClient(Context appContext, Dispatcher dispatcher,
+                                                 @Named("regular") RequestQueue requestQueue,
+                                                 AccessToken token, UserAgent userAgent) {
+        return new OrderRestClient(appContext, dispatcher, requestQueue, token, userAgent);
     }
 
     @Singleton
