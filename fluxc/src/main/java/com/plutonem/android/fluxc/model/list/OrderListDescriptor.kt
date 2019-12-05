@@ -68,7 +68,5 @@ sealed class OrderListDescriptor(
 
 enum class OrderListOrderBy(val value: String) {
     DATE("date"),
-    LAST_MODIFIED("modified"),
-    SHOP_TITLE("shop_title"),
     ID("ID");
 }

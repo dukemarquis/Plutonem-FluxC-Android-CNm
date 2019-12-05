@@ -1,16 +1,22 @@
 package com.plutonem.android.fluxc.store;
 
+import androidx.annotation.NonNull;
+
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.Payload;
 import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.model.LocalOrRemoteId.LocalId;
+import com.plutonem.android.fluxc.model.list.ListOrder;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor.OrderListDescriptorForRestBuyer;
 import com.plutonem.android.fluxc.model.order.OrderStatus;
 import com.plutonem.android.fluxc.network.BaseRequest.BaseNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.order.OrderRestClient;
 import com.plutonem.android.fluxc.persistence.OrderSqlUtils;
+import com.wellsql.generated.OrderModelTable;
+import com.yarolegovich.wellsql.SelectQuery;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -58,6 +64,28 @@ public class OrderStore extends Store {
     @Override
     public void onRegister() {
         AppLog.d(T.API, "OrderStore onRegister");
+    }
+
+    /**
+     * Returns the local orders for the given order list descriptor.
+     */
+    public @NonNull List<LocalId> getLocalOrderIdsForDescriptor(OrderListDescriptor orderListDescriptor) {
+        String orderBy = null;
+        switch (orderListDescriptor.getOrderBy()) {
+            case DATE:
+                orderBy = OrderModelTable.DATE_CREATED;
+                break;
+            case ID:
+                orderBy = OrderModelTable.ID;
+                break;
+        }
+        int order;
+        if (orderListDescriptor.getOrder() == ListOrder.ASC) {
+            order = SelectQuery.ORDER_ASCENDING;
+        } else {
+            order = SelectQuery.ORDER_DESCENDING;
+        }
+        return mOrderSqlUtils.getLocalPostIdsForFilter(orderListDescriptor.getBuyer(), orderBy, order);
     }
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
