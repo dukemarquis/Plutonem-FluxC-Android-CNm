@@ -5,6 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
 import com.plutonem.android.fluxc.Dispatcher
+import com.plutonem.android.fluxc.Payload
+import com.plutonem.android.fluxc.action.ListAction
+import com.plutonem.android.fluxc.action.ListAction.FETCHED_LIST_ITEMS
+import com.plutonem.android.fluxc.action.ListAction.LIST_ITEMS_CHANGED
 import com.plutonem.android.fluxc.annotations.action.Action
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.RemoteId
 import com.plutonem.android.fluxc.model.list.*
@@ -13,6 +17,8 @@ import com.plutonem.android.fluxc.model.list.datasource.InternalPagedListDataSou
 import com.plutonem.android.fluxc.model.list.datasource.ListItemDataSourceInterface
 import com.plutonem.android.fluxc.persistence.ListItemSqlUtils
 import com.plutonem.android.fluxc.persistence.ListSqlUtils
+import com.plutonem.android.fluxc.store.ListStore.OnListChanged.CauseOfListChange
+import com.yarolegovich.wellsql.WellSql
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.Subscribe
@@ -38,7 +44,12 @@ class ListStore @Inject constructor(
 ) : Store(dispatcher) {
     @Subscribe(threadMode = ThreadMode.ASYNC)
     override fun onAction(action: Action<*>) {
+        val actionType = action.type as? ListAction ?: return
 
+        when (actionType) {
+            FETCHED_LIST_ITEMS -> handleFetchedListItems(action.payload as FetchedListItemsPayload)
+            LIST_ITEMS_CHANGED -> handleListItemsChanged(action.payload as ListItemsChangedPayload)
+        }
     }
 
     override fun onRegister() {
@@ -174,10 +185,83 @@ class ListStore @Inject constructor(
     }
 
     /**
+     * Handles the [ListAction.FETCHED_LIST_ITEMS] action.
+     *
+     * Here is how it works:
+     * 1. If there was an error, update the list's state and emit the change. Otherwise:
+     * 2. If the first page is fetched, delete the existing [ListItemModel]s.
+     * 3. Update the [ListModel]'s state depending on whether there is more data to be fetched
+     * 4. Insert the [ListItemModel]s and emit the change
+     *
+     * See [handleFetchList] to see how items are fetched.
+     */
+    private fun handleFetchedListItems(payload: FetchedListItemsPayload) {
+        val newState = when {
+            payload.isError -> ListState.ERROR
+            payload.canLoadMore -> ListState.CAN_LOAD_MORE
+            else -> FETCHED
+        }
+        listSqlUtils.insertOrUpdateList(payload.listDescriptor, newState)
+
+        if (!payload.isError) {
+            val db = WellSql.giveMeWritableDb()
+            db.beginTransaction()
+            try {
+                if (!payload.loadedMore) {
+                    deleteListItems(payload.listDescriptor)
+                }
+                val listModel = requireNotNull(listSqlUtils.getList(payload.listDescriptor)) {
+                    "The `ListModel` can never be `null` here since either a new list is inserted or existing one " +
+                            "updated"
+                }
+                listItemSqlUtils.insertItemList(payload.remoteItemIds.map { remoteItemId ->
+                    val listItemModel = ListItemModel()
+                    listItemModel.listId = listModel.id
+                    listItemModel.remoteItemId = remoteItemId
+                    return@map listItemModel
+                })
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+        val causeOfChange = if (payload.isError) {
+            CauseOfListChange.ERROR
+        } else {
+            if (payload.loadedMore) CauseOfListChange.LOADED_MORE else CauseOfListChange.FIRST_PAGE_FETCHED
+        }
+        emitChange(OnListChanged(listOf(payload.listDescriptor), causeOfChange, payload.error))
+        handleListStateChange(payload.listDescriptor, newState, payload.error)
+    }
+
+    /**
      * A helper function that emits the latest [ListState] for the given [ListDescriptor].
      */
-    private fun handleListStateChange(listDescriptor: ListDescriptor, newState: ListState, error: ListError? = null) {
+    private fun handleListStateChange(
+        listDescriptor: ListDescriptor,
+        newState: ListState,
+        error: ListError? = null
+    ) {
         emitChange(OnListStateChanged(listDescriptor, newState, error))
+    }
+
+    /**
+     * Handles the [ListAction.LIST_ITEMS_CHANGED] action.
+     *
+     * Whenever an item of a list is changed, we'll emit the [OnListItemsChanged] event so the consumer of the lists can
+     * update themselves.
+     */
+    private fun handleListItemsChanged(payload: ListItemsChangedPayload) {
+        emitChange(OnListItemsChanged(payload.type, error = null))
+    }
+
+    /**
+     * Deletes all the items for the given [ListDescriptor].
+     */
+    private fun deleteListItems(listDescriptor: ListDescriptor) {
+        listSqlUtils.getList(listDescriptor)?.let {
+            listItemSqlUtils.deleteItems(it.id)
+        }
     }
 
     /**
@@ -211,6 +295,23 @@ class ListStore @Inject constructor(
     }
 
     /**
+     * The event to be emitted when there is a change to a [ListModel].
+     */
+    class OnListChanged(
+        val listDescriptors: List<ListDescriptor>,
+        val causeOfChange: CauseOfListChange,
+        error: ListError?
+    ) : Store.OnChanged<ListError>() {
+        enum class CauseOfListChange {
+            ERROR, FIRST_PAGE_FETCHED, LOADED_MORE
+        }
+
+        init {
+            this.error = error
+        }
+    }
+
+    /**
      * The event to be emitted whenever there is a change to the [ListState]
      */
     class OnListStateChanged(
@@ -218,6 +319,48 @@ class ListStore @Inject constructor(
         val newState: ListState,
         error: ListError?
     ) : Store.OnChanged<ListError>() {
+        init {
+            this.error = error
+        }
+    }
+
+    /**
+     * The event to be emitted when there is a change to items for a specific [ListDescriptorTypeIdentifier].
+     */
+    class OnListItemsChanged(
+        val type: ListDescriptorTypeIdentifier,
+        error: ListError?
+    ) : Store.OnChanged<ListError>() {
+        init {
+            this.error = error
+        }
+    }
+
+    /**
+     * This is the payload for [ListAction.LIST_ITEMS_CHANGED].
+     *
+     * @property type [ListDescriptorTypeIdentifier] which will tell [ListStore] and the clients which
+     * [ListDescriptor]s are updated.
+     */
+    class ListItemsChangedPayload(val type: ListDescriptorTypeIdentifier)
+
+    /**
+     * This is the payload for [ListAction.FETCHED_LIST_ITEMS].
+     *
+     * @property listDescriptor List descriptor will be provided when the action to fetch items will be dispatched
+     * from other Stores. The same list descriptor will need to be used in this payload so [ListStore] can decide
+     * which list to update.
+     * @property remoteItemIds Fetched item ids
+     * @property loadedMore Indicates whether the first page is fetched or we loaded more data
+     * @property canLoadMore Indicates whether there is more data to be loaded from the server.
+     */
+    class FetchedListItemsPayload(
+        val listDescriptor: ListDescriptor,
+        val remoteItemIds: List<Long>,
+        val loadedMore: Boolean,
+        val canLoadMore: Boolean,
+        error: ListError?
+    ) : Payload<ListError>() {
         init {
             this.error = error
         }

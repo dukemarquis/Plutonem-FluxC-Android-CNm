@@ -57,13 +57,13 @@ sealed class OrderListDescriptor(
     }
 
     class OrderListDescriptorForRestBuyer(
-        site: BuyerModel,
+        buyer: BuyerModel,
         statusList: List<OrderStatus> = DEFAULT_ORDER_STATUS_LIST,
         val account: AccountFilter = AccountFilter.Everyone,
         order: ListOrder = DESC,
         orderBy: OrderListOrderBy = DATE,
         config: ListConfig = ListConfig.default
-    ) : OrderListDescriptor(site, statusList, order, orderBy, config)
+    ) : OrderListDescriptor(buyer, statusList, order, orderBy, config)
 }
 
 enum class OrderListOrderBy(val value: String) {

@@ -20,6 +20,39 @@ public class PLUTONEMREST {
         private BuyersEndpoint(String previousEndpoint) {
             super(previousEndpoint + "buyers/");
         }
+
+        @Endpoint("/buyers/$buyer/")
+        public PLUTONEMREST.BuyersEndpoint.BuyerEndpoint buyer(long buyerId) {
+            return new PLUTONEMREST.BuyersEndpoint.BuyerEndpoint(this.getEndpoint(), buyerId);
+        }
+
+        public static class BuyerEndpoint extends PlutonemEndpoint {
+            @Endpoint("/sites/$site/orders/")
+            public PLUTONEMREST.BuyersEndpoint.BuyerEndpoint.OrdersEndpoint orders;
+
+            private BuyerEndpoint(String previousEndpoint, long buyerId) {
+                super(previousEndpoint, buyerId);
+            }
+
+            public static class OrdersEndpoint extends PlutonemEndpoint {
+                private static final String ORDERS_ENDPOINT = "orders/";
+
+                private OrdersEndpoint(String previousEndpoint) {
+                    super(previousEndpoint + "orders/");
+                }
+
+                @Endpoint("/buyers/$buyer/orders/$order_ID/")
+                public PLUTONEMREST.BuyersEndpoint.BuyerEndpoint.OrdersEndpoint.OrderEndpoint order(long orderId) {
+                    return new PLUTONEMREST.BuyersEndpoint.BuyerEndpoint.OrdersEndpoint.OrderEndpoint(this.getEndpoint(), orderId);
+                }
+
+                public static class OrderEndpoint extends PlutonemEndpoint {
+                    private OrderEndpoint(String previousEndpoint, long orderId) {
+                        super(previousEndpoint, orderId);
+                    }
+                }
+            }
+        }
     }
 
     public static class MeEndpoint extends PlutonemEndpoint {

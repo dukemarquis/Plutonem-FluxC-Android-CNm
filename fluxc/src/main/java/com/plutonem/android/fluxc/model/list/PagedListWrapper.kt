@@ -3,6 +3,8 @@ package com.plutonem.android.fluxc.model.list
 import androidx.lifecycle.*
 import androidx.paging.PagedList
 import com.plutonem.android.fluxc.Dispatcher
+import com.plutonem.android.fluxc.store.ListStore.OnListChanged
+import com.plutonem.android.fluxc.store.ListStore.OnListItemsChanged
 import com.plutonem.android.fluxc.store.ListStore.ListError
 import com.plutonem.android.fluxc.store.ListStore.OnListStateChanged
 import kotlinx.coroutines.CoroutineScope
@@ -71,6 +73,16 @@ class PagedListWrapper<T>(
     }
 
     /**
+     * A method to be used by clients to tell the data needs to be reloaded and recalculated since there was a change
+     * to at least one of the objects in the list. In most cases this should be used for changes where the depending
+     * data of an object changes, such as a change to the upload status of a post. Changes to the actual data
+     * should be managed through `ListStore` and shouldn't be necessary to be handled by clients.
+     */
+    fun invalidateData() {
+        invalidate()
+    }
+
+    /**
      * Handles the [OnListStateChanged] `ListStore` event. It'll update the state information related [LiveData]
      * instances.
      */
@@ -83,5 +95,31 @@ class PagedListWrapper<T>(
         _isFetchingFirstPage.postValue(event.newState.isFetchingFirstPage())
         _isLoadingMore.postValue(event.newState.isLoadingMore())
         _listError.postValue(event.error)
+    }
+
+    /**
+     * Handles the [OnListChanged] `ListStore` event. It'll invalidate the data, so it can be reloaded. It'll also
+     * updates whether the list is empty or not.
+     */
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    @Suppress("unused")
+    fun onListChanged(event: OnListChanged) {
+        if (!event.listDescriptors.contains(listDescriptor)) {
+            return
+        }
+        invalidateData()
+    }
+
+    /**
+     * Handles the [OnListItemsChanged] `ListStore` event. It'll invalidate the data, so it can be reloaded. It'll also
+     * updates whether the list is empty or not.
+     */
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    @Suppress("unused")
+    fun onListItemsChanged(event: OnListItemsChanged) {
+        if (listDescriptor.typeIdentifier != event.type) {
+            return
+        }
+        invalidateData()
     }
 }
