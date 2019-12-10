@@ -32,6 +32,7 @@ public class PLUTONEMREST {
 
             private BuyerEndpoint(String previousEndpoint, long buyerId) {
                 super(previousEndpoint, buyerId);
+                this.orders = new PLUTONEMREST.BuyersEndpoint.BuyerEndpoint.OrdersEndpoint(this.getEndpoint());
             }
 
             public static class OrdersEndpoint extends PlutonemEndpoint {
