@@ -24,6 +24,8 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import kotlin.coroutines.CoroutineContext;
+import kotlinx.coroutines.Dispatchers;
 import okhttp3.OkHttpClient;
 
 @Module
@@ -84,6 +86,12 @@ public class ReleaseNetworkModule {
                                                  @Named("regular") RequestQueue requestQueue,
                                                  AccessToken token, UserAgent userAgent) {
         return new OrderRestClient(appContext, dispatcher, requestQueue, token, userAgent);
+    }
+
+    @Singleton
+    @Provides
+    public CoroutineContext provideCoroutineContext() {
+        return Dispatchers.getDefault();
     }
 
     @Singleton
