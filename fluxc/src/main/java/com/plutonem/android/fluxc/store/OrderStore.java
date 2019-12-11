@@ -212,22 +212,23 @@ public class OrderStore extends Store {
      */
     public @NonNull
     List<LocalId> getLocalOrderIdsForDescriptor(OrderListDescriptor orderListDescriptor) {
-        String orderBy = null;
-        switch (orderListDescriptor.getOrderBy()) {
-            case DATE:
-                orderBy = OrderModelTable.DATE_CREATED;
-                break;
-            case ID:
-                orderBy = OrderModelTable.ID;
-                break;
-        }
-        int order;
-        if (orderListDescriptor.getOrder() == ListOrder.ASC) {
-            order = SelectQuery.ORDER_ASCENDING;
-        } else {
-            order = SelectQuery.ORDER_DESCENDING;
-        }
-        return mOrderSqlUtils.getLocalPostIdsForFilter(orderListDescriptor.getBuyer(), orderBy, order);
+        return Collections.emptyList();
+//        String orderBy = null;
+//        switch (orderListDescriptor.getOrderBy()) {
+//            case DATE:
+//                orderBy = OrderModelTable.DATE_CREATED;
+//                break;
+//            case ID:
+//                orderBy = OrderModelTable.ID;
+//                break;
+//        }
+//        int order;
+//        if (orderListDescriptor.getOrder() == ListOrder.ASC) {
+//            order = SelectQuery.ORDER_ASCENDING;
+//        } else {
+//            order = SelectQuery.ORDER_DESCENDING;
+//        }
+//        return mOrderSqlUtils.getLocalOrderIdsForFilter(orderListDescriptor.getBuyer(), orderBy, order);
     }
 
     @Subscribe(threadMode = ThreadMode.ASYNC)

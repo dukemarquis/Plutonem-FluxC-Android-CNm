@@ -3,6 +3,7 @@ package com.plutonem.android.fluxc.model.order;
 import java.util.List;
 
 public enum OrderStatus {
+    UNKNOWN,
     DELIVERING,
     RECEIVING,
     FINISHED;
