@@ -21,7 +21,19 @@ allprojects {
     repositories {
         google()
         jcenter()
+    }
+}
 
+subprojects {
+    configurations.all {
+        resolutionStrategy {
+            forcedModules = [
+                    // Needed for com.nhaarman:mockito-kotlin-kt1.1
+                    // Can possibly be dropped when v2 of mockito-kotlin is released
+                    "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version",
+                    "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+            ]
+        }
     }
 }
 
@@ -32,4 +44,5 @@ task clean(type: Delete) {
 ext {
     daggerVersion = '2.22.1'
     wellSqlVersion = '1.5.0'
+    appcompat_version = '1.1.0'
 }

@@ -9,6 +9,7 @@ import com.plutonem.android.fluxc.Payload
 import com.plutonem.android.fluxc.action.ListAction
 import com.plutonem.android.fluxc.action.ListAction.FETCHED_LIST_ITEMS
 import com.plutonem.android.fluxc.action.ListAction.LIST_ITEMS_CHANGED
+import com.plutonem.android.fluxc.action.ListAction.REMOVE_EXPIRED_LISTS
 import com.plutonem.android.fluxc.annotations.action.Action
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.RemoteId
 import com.plutonem.android.fluxc.model.list.*
@@ -30,6 +31,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 
+// How long a list should stay in DB if it hasn't been updated
+const val DEFAULT_EXPIRATION_DURATION = 1000L * 60 * 60 * 24 * 7
+
 /**
  * This Store is responsible for managing lists and their metadata. One of the designs goals for this Store is expose
  * as little as possible to the consumers and make sure the exposed parts are immutable. This not only moves the
@@ -49,6 +53,7 @@ class ListStore @Inject constructor(
         when (actionType) {
             FETCHED_LIST_ITEMS -> handleFetchedListItems(action.payload as FetchedListItemsPayload)
             LIST_ITEMS_CHANGED -> handleListItemsChanged(action.payload as ListItemsChangedPayload)
+            REMOVE_EXPIRED_LISTS -> handleRemoveExpiredLists(action.payload as RemoveExpiredListsPayload)
         }
     }
 
@@ -256,6 +261,15 @@ class ListStore @Inject constructor(
     }
 
     /**
+     * Handles the [ListAction.REMOVE_EXPIRED_LISTS] action.
+     *
+     * It deletes [ListModel]s that hasn't been updated for the given [RemoveExpiredListsPayload.expirationDuration].
+     */
+    private fun handleRemoveExpiredLists(payload: RemoveExpiredListsPayload) {
+        listSqlUtils.deleteExpiredLists(payload.expirationDuration)
+    }
+
+    /**
      * Deletes all the items for the given [ListDescriptor].
      */
     private fun deleteListItems(listDescriptor: ListDescriptor) {
@@ -365,6 +379,13 @@ class ListStore @Inject constructor(
             this.error = error
         }
     }
+
+    /**
+     * This is the payload for [ListAction.REMOVE_EXPIRED_LISTS].
+     *
+     * @property expirationDuration Tells how long a list should be kept in the DB if it hasn't been updated
+     */
+    class RemoveExpiredListsPayload(val expirationDuration: Long = DEFAULT_EXPIRATION_DURATION)
 
     class ListError(
         val type: ListErrorType,

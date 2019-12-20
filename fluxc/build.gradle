@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-//        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
@@ -26,10 +26,10 @@ android {
 
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
+        minSdkVersion 16
+        targetSdkVersion 29
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -49,7 +49,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.1.0'
 
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation "androidx.appcompat:appcompat:$appcompat_version"
 
     // WordPress libs
     implementation ('org.wordpress:utils:1.20.0') {
@@ -71,8 +71,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.2.2'
     api 'com.android.volley:volley:1.1.1'
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'org.apache.commons:commons-text:1.1'
-    api "androidx.paging:paging-runtime:2.1.0"
+    implementation 'org.apache.commons:commons-text:1.8'
+    api "androidx.paging:paging-runtime:2.1.1"
 
     // Dagger
     implementation "com.google.dagger:dagger:$daggerVersion"
