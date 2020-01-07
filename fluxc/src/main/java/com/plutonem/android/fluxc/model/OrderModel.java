@@ -14,7 +14,8 @@ import org.wordpress.android.util.StringUtils;
 import java.io.Serializable;
 
 @Table
-public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements Cloneable, Identifiable, Serializable {
+public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements Cloneable, Identifiable, Serializable,
+        OrderImmutableModel {
     @PrimaryKey
     @Column private int mId;
     @Column private int mLocalBuyerId;
@@ -33,7 +34,9 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
     @Column private String mAccountDisplayName;
 
     // Local only
+    @Column private boolean mIsLocalDraft;
     @Column private boolean mIsLocallyChanged;
+    @Column private String mDateLocallyChanged; // ISO 8601-formatted date in UTC, e.g. 1955-11-05T14:15:00Z
 
     public OrderModel() {}
 
@@ -47,6 +50,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         return mId;
     }
 
+    @Override
     public int getLocalBuyerId() {
         return mLocalBuyerId;
     }
@@ -55,6 +59,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mLocalBuyerId = localTableBuyerId;
     }
 
+    @Override
     public long getRemoteBuyerId() {
         return mRemoteBuyerId;
     }
@@ -63,6 +68,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mRemoteBuyerId = buyerId;
     }
 
+    @Override
     public long getRemoteOrderId() {
         return mRemoteOrderId;
     }
@@ -71,6 +77,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mRemoteOrderId = orderId;
     }
 
+    @Override
     public @NonNull String getShopTitle() {
         return StringUtils.notNullStr(mShopTitle);
     }
@@ -79,6 +86,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mShopTitle = shopTitle;
     }
 
+    @Override
     public @NonNull String getProductDetail() {
         return StringUtils.notNullStr(mProductDetail);
     }
@@ -87,6 +95,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mProductDetail = productDetail;
     }
 
+    @Override
     public @NonNull String getOrderDetail() {
         return StringUtils.notNullStr(mOrderDetail);
     }
@@ -95,6 +104,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mOrderDetail = orderDetail;
     }
 
+    @Override
     public @NonNull String getDateCreated() {
         return StringUtils.notNullStr(mDateCreated);
     }
@@ -103,6 +113,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mDateCreated = dateCreated;
     }
 
+    @Override
     public @NonNull String getLastModified() {
         return StringUtils.notNullStr(mLastModified);
     }
@@ -111,6 +122,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mLastModified = lastModified;
     }
 
+    @Override
     public @NonNull String getRemoteLastModified() {
         return StringUtils.notNullStr(mRemoteLastModified);
     }
@@ -119,6 +131,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mRemoteLastModified = remoteLastModified;
     }
 
+    @Override
     public @NonNull String getStatus() {
         return StringUtils.notNullStr(mStatus);
     }
@@ -127,6 +140,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mStatus = status;
     }
 
+    @Override
     public @NonNull String getOrderFormat() {
         return StringUtils.notNullStr(mOrderFormat);
     }
@@ -135,6 +149,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mOrderFormat = orderFormat;
     }
 
+    @Override
     public long getAccountId() {
         return mAccountId;
     }
@@ -143,6 +158,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         this.mAccountId = accountId;
     }
 
+    @Override
     public String getAccountDisplayName() {
         return mAccountDisplayName;
     }
@@ -151,12 +167,31 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         mAccountDisplayName = accountDisplayName;
     }
 
+    @Override
+    public boolean isLocalDraft() {
+        return mIsLocalDraft;
+    }
+
+    public void setIsLocalDraft(boolean isLocalDraft) {
+        mIsLocalDraft = isLocalDraft;
+    }
+
+    @Override
     public boolean isLocallyChanged() {
         return mIsLocallyChanged;
     }
 
     public void setIsLocallyChanged(boolean isLocallyChanged) {
         mIsLocallyChanged = isLocallyChanged;
+    }
+
+    @Override
+    public @NonNull String getDateLocallyChanged() {
+        return StringUtils.notNullStr(mDateLocallyChanged);
+    }
+
+    public void setDateLocallyChanged(String dateLocallyChanged) {
+        mDateLocallyChanged = dateLocallyChanged;
     }
 
     @Override

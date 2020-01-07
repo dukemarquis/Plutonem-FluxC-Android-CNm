@@ -15,7 +15,6 @@ import com.plutonem.android.fluxc.model.CauseOfOnOrderChanged;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.LocalId;
 import com.plutonem.android.fluxc.model.OrderModel;
-import com.plutonem.android.fluxc.model.list.ListOrder;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor;
 import com.plutonem.android.fluxc.model.list.OrderListDescriptor.OrderListDescriptorForRestBuyer;
 import com.plutonem.android.fluxc.model.order.OrderStatus;
@@ -26,8 +25,6 @@ import com.plutonem.android.fluxc.store.ListStore.FetchedListItemsPayload;
 import com.plutonem.android.fluxc.store.ListStore.ListError;
 import com.plutonem.android.fluxc.store.ListStore.ListErrorType;
 import com.plutonem.android.fluxc.store.ListStore.ListItemsChangedPayload;
-import com.wellsql.generated.OrderModelTable;
-import com.yarolegovich.wellsql.SelectQuery;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -182,6 +179,12 @@ public class OrderStore extends Store {
     public void onRegister() {
         AppLog.d(T.API, "OrderStore onRegister");
     }
+
+//    public OrderModel instantiateOrderModel(BuyerModel buyer, String orderFormat) {
+//        OrderModel order = new OrderModel();
+//        order.setLocalBuyerId(buyer.getId());
+//        order.setIsLocalDraft(true);
+//    }
 
     public List<OrderModel> getOrdersByLocalOrRemoteOrderIds(List<? extends LocalOrRemoteId> localOrRemoteIds,
                                                              BuyerModel buyer) {
