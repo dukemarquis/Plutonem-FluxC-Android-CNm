@@ -1,7 +1,13 @@
 package com.plutonem.android.fluxc.store;
 
+import androidx.annotation.NonNull;
+
 import com.plutonem.android.fluxc.Dispatcher;
+import com.plutonem.android.fluxc.action.SubmitAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
+import com.plutonem.android.fluxc.annotations.action.IAction;
+import com.plutonem.android.fluxc.generated.OrderActionBuilder;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -20,13 +26,25 @@ public class UploadStore extends Store {
 
     @Override
     public void onRegister() {
-        AppLog.d(T.API, "UploadStore onRegister");
+        AppLog.d(T.API, "SubmitStore onRegister");
     }
 
     // Ensure that events reach the UploadStore before their main stores (OrderStore)
     @Subscribe(threadMode = ThreadMode.ASYNC, priority = 1)
     @Override
     public void onAction(Action action) {
+        IAction actionType = action.getType();
+        if (actionType instanceof SubmitAction) {
+            onSubmitAction((SubmitAction) actionType, action.getPayload());
+        }
+    }
 
+    private void onSubmitAction(SubmitAction actionType, Object payload) {
+        switch (actionType) {
+            case PUSHED_ORDER:
+//                handleOrderUploaded((RemoteOrderPayload) payload);
+                mDispatcher.dispatch(OrderActionBuilder.newPushedOrderAction((RemoteOrderPayload) payload));
+                break;
+        }
     }
 }

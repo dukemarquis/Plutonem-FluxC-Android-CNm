@@ -25,16 +25,20 @@ import com.plutonem.android.fluxc.store.ListStore.FetchedListItemsPayload;
 import com.plutonem.android.fluxc.store.ListStore.ListError;
 import com.plutonem.android.fluxc.store.ListStore.ListErrorType;
 import com.plutonem.android.fluxc.store.ListStore.ListItemsChangedPayload;
+import com.wellsql.generated.OrderModelTable;
+import com.yarolegovich.wellsql.WellSql;
 
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.NotNull;
 import org.wordpress.android.util.AppLog;
 import org.wordpress.android.util.AppLog.T;
+import org.wordpress.android.util.DateTimeUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,9 +147,17 @@ public class OrderStore extends Store {
         }
     }
 
+    public static class OnOrderSubmitted extends OnChanged<OrderError> {
+        public OrderModel order;
+
+        public OnOrderSubmitted(OrderModel order) {
+            this.order = order;
+        }
+    }
+
     public enum OrderErrorType {
-        UNKNOWN_ORDER,
-        INVALID_RESPONSE,
+//        UNKNOWN_ORDER,
+//        INVALID_RESPONSE,
         GENERIC_ERROR;
 
         public static OrderErrorType fromString(String string) {
@@ -180,11 +192,36 @@ public class OrderStore extends Store {
         AppLog.d(T.API, "OrderStore onRegister");
     }
 
-//    public OrderModel instantiateOrderModel(BuyerModel buyer, String orderFormat) {
-//        OrderModel order = new OrderModel();
-//        order.setLocalBuyerId(buyer.getId());
-//        order.setIsLocalDraft(true);
-//    }
+    public OrderModel instantiateOrderModel(BuyerModel buyer, String orderFormat) {
+        OrderModel order = new OrderModel();
+        order.setLocalBuyerId(buyer.getId());
+        order.setIsLocalDraft(true);
+        order.setDateLocallyChanged((DateTimeUtils.iso8601UTCFromDate(new Date())));
+        order.setOrderFormat(orderFormat);
+
+        // Insert the order into the db, updating the object to include the local ID
+        order = mOrderSqlUtils.insertOrderForResult(order);
+
+        // id is set to -1 if insertion fails
+        if (order.getId() == -1) {
+            return null;
+        }
+        return order;
+    }
+
+    /**
+     * Given a local ID for a order, returns that order as a {@link OrderModel}.
+     */
+    public OrderModel getOrderByLocalOrderId(int localId) {
+        List<OrderModel> result = WellSql.select(OrderModel.class)
+                                         .where().equals(OrderModelTable.ID, localId).endWhere()
+                                         .getAsModel();
+        if (result.isEmpty()) {
+            return null;
+        } else {
+            return result.get(0);
+        }
+    }
 
     public List<OrderModel> getOrdersByLocalOrRemoteOrderIds(List<? extends LocalOrRemoteId> localOrRemoteIds,
                                                              BuyerModel buyer) {
@@ -254,6 +291,18 @@ public class OrderStore extends Store {
             case FETCHED_ORDER:
                 handleFetchSingleOrderCompleted((FetchOrderResponsePayload) action.getPayload());
                 break;
+            case PUSH_ORDER:
+                pushOrder((RemoteOrderPayload) action.getPayload());
+                break;
+            case PUSHED_ORDER:
+                handlePushOrderCompleted((RemoteOrderPayload) action.getPayload());
+                break;
+            case UPDATE_ORDER:
+                updateOrder((OrderModel) action.getPayload(), true);
+                break;
+            case REMOVE_ORDER:
+                removeOrder((OrderModel) action.getPayload());
+                break;
         }
     }
 
@@ -317,11 +366,35 @@ public class OrderStore extends Store {
             event.error = payload.error;
             emitChange(event);
         } else {
-            updateOrder(payload.order);
+            updateOrder(payload.order, false);
         }
     }
 
-    private void updateOrder(OrderModel order) {
+    private void handlePushOrderCompleted(RemoteOrderPayload payload) {
+        if (payload.isError()) {
+            OnOrderSubmitted onOrderSubmitted = new OnOrderSubmitted(payload.order);
+            onOrderSubmitted.error = payload.error;
+            emitChange(onOrderSubmitted);
+        } else {
+            if (payload.buyer.isUsingPnRestApi()) {
+                // The PN.COM REST API response contains the modified order, so we're already in sync with the server
+                // All we need to do is store it and emit OnOrderChanged
+                updateOrder(payload.order, false);
+                emitChange(new OnOrderSubmitted(payload.order));
+            }
+        }
+    }
+
+    private void pushOrder(RemoteOrderPayload payload) {
+        if (payload.buyer.isUsingPnRestApi()) {
+            mOrderRestClient.pushOrder(payload.order, payload.buyer);
+        }
+    }
+
+    private void updateOrder(OrderModel order, boolean changeLocalDate) {
+        if (changeLocalDate) {
+            order.setDateLocallyChanged((DateTimeUtils.iso8601UTCFromDate(new Date())));
+        }
         int rowsAffected = mOrderSqlUtils.insertOrUpdateOrderOverwritingLocalChanges(order);
         CauseOfOnOrderChanged causeOfChange = new CauseOfOnOrderChanged.UpdateOrder(order.getId(), order.getRemoteOrderId());
         OnOrderChanged onOrderChanged = new OnOrderChanged(causeOfChange, rowsAffected);
@@ -329,5 +402,16 @@ public class OrderStore extends Store {
 
         mDispatcher.dispatch(ListActionBuilder.newListItemsChangedAction(
                 new ListItemsChangedPayload(OrderListDescriptor.calculateTypeIdentifier(order.getLocalBuyerId()))));
+    }
+
+    private void removeOrder(OrderModel order) {
+        if (order == null) {
+            return;
+        }
+        int rowsAffected = mOrderSqlUtils.deleteOrder(order);
+
+        CauseOfOnOrderChanged causeOfChange = new CauseOfOnOrderChanged.RemoveOrder(order.getId(), order.getRemoteOrderId());
+        OnOrderChanged onOrderChanged = new OnOrderChanged(causeOfChange, rowsAffected);
+        emitChange(onOrderChanged);
     }
 }

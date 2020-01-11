@@ -33,6 +33,14 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
     @Column private long mAccountId;
     @Column private String mAccountDisplayName;
 
+    /**
+     * This field stores a hashcode value of the order detail when the user confirmed making the changes visible to
+     * the users (Confirm).
+     * <p>
+     * It is used to determine if the user actually confirmed the changes and if the order was edited since then.
+     */
+    @Column private int mChangesConfirmedContentHashcode;
+
     // Local only
     @Column private boolean mIsLocalDraft;
     @Column private boolean mIsLocallyChanged;
@@ -168,6 +176,15 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
     }
 
     @Override
+    public int getChangesConfirmedContentHashcode() {
+        return mChangesConfirmedContentHashcode;
+    }
+
+    public void setChangesConfirmedContentHashcode(int changesConfirmedContentHashcode) {
+        mChangesConfirmedContentHashcode = changesConfirmedContentHashcode;
+    }
+
+    @Override
     public boolean isLocalDraft() {
         return mIsLocalDraft;
     }
@@ -211,6 +228,32 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
                 && StringUtils.equals(getStatus(), otherOrder.getStatus())
                 && StringUtils.equals(getOrderFormat(), otherOrder.getOrderFormat())
                 && StringUtils.equals(getAccountDisplayName(), otherOrder.getAccountDisplayName());
+    }
+
+    /**
+     * This method is used along with `mChangesConfirmedContentHashcode`. We store the contentHashcode of
+     * the order when the user explicitly confirms that the changes to the order can be confirmed. Beware, that when
+     * you modify this method all users will need to re-confirm all the local changes. The changes wouldn't get
+     * confirmed otherwise.
+     *
+     * This is a method generated using Android Studio. When you need to add a new field it's safer to use the
+     * generator again. (We can't use Objects.hash() since the current minSdkVersion is lower than 19.
+     */
+    @Override
+    public int contentHashcode() {
+        int result;
+        result = mId;
+        result = 31 * result + mLocalBuyerId;
+        result = 31 * result + (int) (mRemoteBuyerId ^ (mRemoteBuyerId >>> 32));
+        result = 31 * result + (int) (mRemoteOrderId ^ (mRemoteOrderId >>> 32));
+        result = 31 * result + (mDateCreated != null ? mDateCreated.hashCode() : 0);
+        result = 31 * result + (mShopTitle != null ? mShopTitle.hashCode() : 0);
+        result = 31 * result + (mProductDetail != null ? mProductDetail.hashCode() : 0);
+        result = 31 * result + (mStatus != null ? mStatus.hashCode() : 0);
+        result = 31 * result + (int) (mAccountId ^ (mAccountId >>> 32));
+        result = 31 * result + (mAccountDisplayName != null ? mAccountDisplayName.hashCode() : 0);
+        result = 31 * result + (mOrderFormat != null ? mOrderFormat.hashCode() : 0);
+        return result;
     }
 
     @Override

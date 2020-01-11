@@ -15,7 +15,10 @@ interface OrderImmutableModel {
     val orderFormat: String
     val accountId: Long
     val accountDisplayName: String?
+    val changesConfirmedContentHashcode: Int
     val isLocalDraft: Boolean
     val isLocallyChanged: Boolean
     val dateLocallyChanged: String
+
+    fun contentHashcode(): Int
 }

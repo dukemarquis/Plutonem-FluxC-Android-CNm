@@ -64,6 +64,20 @@ public class PlutonemGsonRequest<T> extends GsonRequest<T> {
                 wrapInBaseListener(errorListener));
     }
 
+    /**
+     * Creates a new JSON-formatted POST request.
+     * @param url the request URL
+     * @param body the content body, which will be converted to JSON using {@link com.google.gson.Gson Gson}
+     * @param clazz the class defining the expected response
+     * @param listener the success listener
+     * @param errorListener the error listener
+     */
+    public static <T> PlutonemGsonRequest<T> buildPostRequest(String url, Map<String, Object> body, Class<T> clazz,
+                                                           Response.Listener<T> listener, PlutonemErrorListener errorListener) {
+        return new PlutonemGsonRequest<>(Method.POST, url, null, body, clazz, null, listener,
+                wrapInBaseListener(errorListener));
+    }
+
     private static BaseErrorListener wrapInBaseListener(final PlutonemErrorListener plutonemErrorListener) {
         return new BaseErrorListener() {
             @Override
@@ -125,21 +139,6 @@ public class PlutonemGsonRequest<T> extends GsonRequest<T> {
                 AuthenticateErrorPayload payload = new AuthenticateErrorPayload(authError);
                 mOnAuthFailedListener.onAuthFailed(payload);
             }
-
-//            if (JetpackTimeoutRequestHandler.isJetpackTimeoutError(returnedError)) {
-//                OnJetpackTimeoutError onJetpackTimeoutError = null;
-//                if (getMethod() == Method.GET && getParams() != null) {
-//                    onJetpackTimeoutError = new OnJetpackTimeoutError(getParams().get("path"), mNumManualRetries);
-//                } else if (getMethod() == Method.POST && getBodyAsMap() != null) {
-//                    Object pathValue = getBodyAsMap().get("path");
-//                    if (pathValue != null) {
-//                        onJetpackTimeoutError = new OnJetpackTimeoutError(pathValue.toString(), mNumManualRetries);
-//                    }
-//                }
-//                if (onJetpackTimeoutError != null) {
-//                    mOnJetpackTunnelTimeoutListener.onJetpackTunnelTimeout(onJetpackTimeoutError);
-//                }
-//            }
         }
 
         return returnedError;

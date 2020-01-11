@@ -10,6 +10,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response.Listener;
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
+import com.plutonem.android.fluxc.generated.SubmitActionBuilder;
 import com.plutonem.android.fluxc.generated.endpoint.PLUTONEMREST;
 import com.plutonem.android.fluxc.model.BuyerModel;
 import com.plutonem.android.fluxc.model.OrderModel;
@@ -23,11 +24,13 @@ import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.Plut
 import com.plutonem.android.fluxc.network.rest.plutonem.PlutonemGsonRequest.PlutonemGsonNetworkError;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
 import com.plutonem.android.fluxc.network.rest.plutonem.order.OrderPNComRestResponse.OrdersResponse;
-import com.plutonem.android.fluxc.store.OrderStore.OrderError;
-import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.OrderError;
 import com.plutonem.android.fluxc.store.OrderStore.OrderListItem;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
+import org.wordpress.android.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,6 +126,50 @@ public class OrderRestClient extends BasePlutonemRestClient {
         add(request);
     }
 
+    public void pushOrder(final OrderModel order, final BuyerModel buyer) {
+        String url;
+
+        if (order.isLocalDraft()) {
+            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.new_.getUrlV1_2();
+        } else {
+            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.new_.getUrlV1_2();
+        }
+
+        Map<String, Object> body = orderModelToParams(order);
+
+        final PlutonemGsonRequest<OrderPNComRestResponse> request = PlutonemGsonRequest.buildPostRequest(url, body,
+                OrderPNComRestResponse.class,
+                new Listener<OrderPNComRestResponse>() {
+                    @Override
+                    public void onResponse(OrderPNComRestResponse response) {
+                        OrderModel submittedOrder = orderResponseToOrderModel(response);
+
+                        submittedOrder.setIsLocalDraft(false);
+                        submittedOrder.setIsLocallyChanged(false);
+                        submittedOrder.setId(order.getId());
+                        submittedOrder.setLocalBuyerId(buyer.getId());
+
+                        RemoteOrderPayload payload = new RemoteOrderPayload(submittedOrder, buyer);
+                        mDispatcher.dispatch(SubmitActionBuilder.newPushedOrderAction(payload));
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+                        // Possible non-generic errors: 404 unknown_order (invalid order ID)
+                        RemoteOrderPayload payload = new RemoteOrderPayload(order, buyer);
+                        payload.error = new OrderError(error.apiError, error.message);
+                        mDispatcher.dispatch(SubmitActionBuilder.newPushedOrderAction(payload));
+                    }
+                }
+        );
+
+        request.addQueryParameter("context", "edit");
+
+        request.disableRetries();
+        add(request);
+    }
+
     private OrderModel orderResponseToOrderModel(OrderPNComRestResponse from) {
         OrderModel order = new OrderModel();
         order.setRemoteOrderId(from.getRemoteOrderId());
@@ -141,6 +188,27 @@ public class OrderRestClient extends BasePlutonemRestClient {
         }
 
         return order;
+    }
+
+    private Map<String, Object> orderModelToParams(OrderModel order) {
+        Map<String, Object> params = new HashMap<>();
+
+        params.put("status", StringUtils.notNullStr(order.getStatus()));
+        params.put("shop_name", StringUtils.notNullStr(order.getShopTitle()));
+        params.put("product_description", StringUtils.notNullStr(order.getProductDetail()));
+
+        if (!TextUtils.isEmpty(order.getDateCreated())) {
+            params.put("date", order.getDateCreated());
+        }
+
+        // We are not adding `lastModified` date to the params because that should be updated by the server when there
+        // is a change in the order. This is tested for both Calypso and PNAndroid on 01/10/2020 and verified that it's
+        // working as expected. I am only adding this note here to avoid a possible confusion about it in the future.
+        if (!TextUtils.isEmpty(order.getOrderFormat())) {
+            params.put("format", order.getOrderFormat());
+        }
+
+        return params;
     }
 
     private Map<String, String> createFetchOrderListParameters(final boolean getPages,

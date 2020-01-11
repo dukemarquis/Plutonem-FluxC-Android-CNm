@@ -189,6 +189,13 @@ public abstract class BaseRequest<T> extends Request<T> {
     }
 
     /**
+     * Convenience method for setting a {@link com.android.volley.RetryPolicy} with no retries.
+     */
+    public void disableRetries() {
+        setRetryPolicy(new DefaultRetryPolicy(DEFAULT_REQUEST_TIMEOUT, 0, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+    }
+
+    /**
      * Generate a cache entry for this request.
      * <p>
      * If caching has been enabled through {@link BaseRequest#enableCaching(int, int)}, the expiry parameters that were

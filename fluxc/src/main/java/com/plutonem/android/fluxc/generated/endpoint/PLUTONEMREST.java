@@ -37,9 +37,12 @@ public class PLUTONEMREST {
 
             public static class OrdersEndpoint extends PlutonemEndpoint {
                 private static final String ORDERS_ENDPOINT = "orders/";
+                @Endpoint("/buyers/$buyer/orders/new/")
+                public PlutonemEndpoint new_;
 
                 private OrdersEndpoint(String previousEndpoint) {
                     super(previousEndpoint + "orders/");
+                    this.new_ = new PlutonemEndpoint(this.getEndpoint() + "new/");
                 }
 
                 @Endpoint("/buyers/$buyer/orders/$order_ID/")

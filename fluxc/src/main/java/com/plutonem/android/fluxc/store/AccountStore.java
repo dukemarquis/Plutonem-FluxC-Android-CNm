@@ -133,11 +133,11 @@ public class AccountStore extends Store {
     public enum AuthenticationErrorType {
         // From response's "error" field
         AUTHORIZATION_REQUIRED,
-        INVALID_REQUEST,
+//        INVALID_REQUEST,
         INVALID_TOKEN,
 
         // From response's "message" field - sadly... (be careful with i18n)
-        INCORRECT_USERNAME_OR_PASSWORD,
+//        INCORRECT_USERNAME_OR_PASSWORD,
 
         // Generic error
         GENERIC_ERROR;

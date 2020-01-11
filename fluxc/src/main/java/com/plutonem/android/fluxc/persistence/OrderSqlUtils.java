@@ -35,16 +35,22 @@ public class OrderSqlUtils {
         }
 
         List<OrderModel> orderResult;
-        orderResult = WellSql.select(OrderModel.class)
-                .where().beginGroup()
-                .equals(OrderModelTable.ID, order.getId())
-                .or()
-                .beginGroup()
-                .equals(OrderModelTable.REMOTE_ORDER_ID, order.getRemoteOrderId())
-                .equals(OrderModelTable.LOCAL_BUYER_ID, order.getLocalBuyerId())
-                .endGroup()
-                .endGroup().endWhere().getAsModel();
-
+        if (order.isLocalDraft()) {
+            orderResult = WellSql.select(OrderModel.class)
+                    .where()
+                    .equals(OrderModelTable.ID, order.getId())
+                    .endWhere().getAsModel();
+        } else {
+            orderResult = WellSql.select(OrderModel.class)
+                    .where().beginGroup()
+                    .equals(OrderModelTable.ID, order.getId())
+                    .or()
+                    .beginGroup()
+                    .equals(OrderModelTable.REMOTE_ORDER_ID, order.getRemoteOrderId())
+                    .equals(OrderModelTable.LOCAL_BUYER_ID, order.getLocalBuyerId())
+                    .endGroup()
+                    .endGroup().endWhere().getAsModel();
+        }
         int numberOfDeletedRows = 0;
         if (orderResult.isEmpty()) {
             // insert
@@ -70,7 +76,7 @@ public class OrderSqlUtils {
             }
             int oldId = orderResult.get(0).getId();
             // Update only if local changes for this order don't exist
-            if (overwriteLocalChanges) {
+            if (overwriteLocalChanges || !orderResult.get(0).isLocallyChanged()) {
                 return WellSql.update(OrderModel.class).whereId(oldId)
                         .put(order, new UpdateAllExceptId<>(OrderModel.class)).execute()
                         + numberOfDeletedRows;
@@ -121,6 +127,26 @@ public class OrderSqlUtils {
             whereQuery = whereQuery.isIn(OrderModelTable.REMOTE_ORDER_ID, remoteIds);
         }
         return whereQuery.endGroup().endWhere().getAsModel();
+    }
+
+    public OrderModel insertOrderForResult(OrderModel order) {
+        WellSql.insert(order).asSingleTransaction(true).execute();
+
+        return order;
+    }
+
+    public int deleteOrder(OrderModel order) {
+        if (order == null) {
+            return 0;
+        }
+
+        return WellSql.delete(OrderModel.class)
+                .where().beginGroup()
+                .equals(OrderModelTable.ID, order.getId())
+                .equals(OrderModelTable.LOCAL_BUYER_ID, order.getLocalBuyerId())
+                .endGroup()
+                .endWhere()
+                .execute();
     }
 
     public List<LocalId> getLocalOrderIdsForFilter(BuyerModel buyer, String orderBy, @Order int order) {
