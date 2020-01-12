@@ -194,12 +194,21 @@ public class OrderRestClient extends BasePlutonemRestClient {
         Map<String, Object> params = new HashMap<>();
 
         params.put("status", StringUtils.notNullStr(order.getStatus()));
-        params.put("shop_name", StringUtils.notNullStr(order.getShopTitle()));
-        params.put("product_description", StringUtils.notNullStr(order.getProductDetail()));
+        params.put("order_name", StringUtils.notNullStr(order.getOrderName()));
+        params.put("order_phone_number", StringUtils.notNullStr(order.getOrderPhoneNumber()));
+        params.put("order_address", StringUtils.notNullStr(order.getOrderAddress()));
+
 
         if (!TextUtils.isEmpty(order.getDateCreated())) {
             params.put("date", order.getDateCreated());
         }
+
+        params.put("shop_name", StringUtils.notNullStr(order.getShopTitle()));
+        params.put("product_name", StringUtils.notNullStr(order.getProductDetail()));
+        params.put("item_sales_price", StringUtils.notNullStr(order.getItemSalesPrice()));
+        params.put("order_number", order.getOrderNumber());
+        params.put("item_distribution_mode", StringUtils.notNullStr(order.getItemDistributionMode()));
+
 
         // We are not adding `lastModified` date to the params because that should be updated by the server when there
         // is a change in the order. This is tested for both Calypso and PNAndroid on 01/10/2020 and verified that it's

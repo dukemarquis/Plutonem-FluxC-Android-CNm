@@ -131,7 +131,7 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
     }
 
     @Override
-    public @NonNull long getOrderNumber() {
+    public long getOrderNumber() {
         return mOrderNumber;
     }
 
