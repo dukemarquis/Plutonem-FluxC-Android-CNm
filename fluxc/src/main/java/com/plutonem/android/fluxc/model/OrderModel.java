@@ -30,6 +30,15 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
     @Column private String mStatus;
     @Column private String mOrderFormat;
 
+    @Column private String mItemSalesPrice;
+    @Column private long mOrderNumber;
+    @Column private String mItemDistributionMode;
+    @Column private String mOrderPrice;
+
+    @Column private String mOrderName;
+    @Column private String mOrderPhoneNumber;
+    @Column private String mOrderAddress;
+
     @Column private long mAccountId;
     @Column private String mAccountDisplayName;
 
@@ -110,6 +119,69 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
 
     public void setOrderDetail(String orderDetail) {
         mOrderDetail = orderDetail;
+    }
+
+    @Override
+    public @NonNull String getItemSalesPrice() {
+        return StringUtils.notNullStr(mItemSalesPrice);
+    }
+
+    public void setItemSalesPrice(String itemSalesPrice) {
+        mItemSalesPrice = itemSalesPrice;
+    }
+
+    @Override
+    public @NonNull long getOrderNumber() {
+        return mOrderNumber;
+    }
+
+    public void setOrderNumber(long orderNumber) {
+        mOrderNumber = orderNumber;
+    }
+
+    @Override
+    public @NonNull String getItemDistributionMode() {
+        return StringUtils.notNullStr(mItemDistributionMode);
+    }
+
+    public void setItemDistributionMode(String itemDistributionMode) {
+        mItemDistributionMode = itemDistributionMode;
+    }
+
+    @Override
+    public @NonNull String getOrderPrice() {
+        return StringUtils.notNullStr(mOrderPrice);
+    }
+
+    public void setOrderPrice(String orderPrice) {
+        mOrderPrice = orderPrice;
+    }
+
+    @Override
+    public @NonNull String getOrderName() {
+        return StringUtils.notNullStr(mOrderName);
+    }
+
+    public void setOrderName(String orderName) {
+        mOrderName = orderName;
+    }
+
+    @Override
+    public @NonNull String getOrderPhoneNumber() {
+        return StringUtils.notNullStr(mOrderPhoneNumber);
+    }
+
+    public void setOrderPhoneNumber(String orderPhoneNumber) {
+        mOrderPhoneNumber = orderPhoneNumber;
+    }
+
+    @Override
+    public @NonNull String getOrderAddress() {
+        return StringUtils.notNullStr(mOrderAddress);
+    }
+
+    public void setOrderAddress(String orderAddress) {
+        mOrderAddress = orderAddress;
     }
 
     @Override
@@ -249,6 +321,13 @@ public class OrderModel extends Payload<BaseRequest.BaseNetworkError> implements
         result = 31 * result + (mDateCreated != null ? mDateCreated.hashCode() : 0);
         result = 31 * result + (mShopTitle != null ? mShopTitle.hashCode() : 0);
         result = 31 * result + (mProductDetail != null ? mProductDetail.hashCode() : 0);
+        result = 31 * result + (mItemSalesPrice != null ? mItemSalesPrice.hashCode() : 0);
+        result = 31 * result + (int) (mOrderNumber ^ (mOrderNumber >>> 32));
+        result = 31 * result + (mItemDistributionMode != null ? mItemDistributionMode.hashCode() : 0);
+        result = 31 * result + (mOrderPrice != null ? mOrderPrice.hashCode() : 0);
+        result = 31 * result + (mOrderName != null ? mOrderName.hashCode() : 0);
+        result = 31 * result + (mOrderPhoneNumber != null ? mOrderPhoneNumber.hashCode() : 0);
+        result = 31 * result + (mOrderAddress != null ? mOrderAddress.hashCode() : 0);
         result = 31 * result + (mStatus != null ? mStatus.hashCode() : 0);
         result = 31 * result + (int) (mAccountId ^ (mAccountId >>> 32));
         result = 31 * result + (mAccountDisplayName != null ? mAccountDisplayName.hashCode() : 0);

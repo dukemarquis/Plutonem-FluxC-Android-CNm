@@ -8,6 +8,13 @@ interface OrderImmutableModel {
     val shopTitle: String
     val productDetail: String
     val orderDetail: String
+    val itemSalesPrice: String
+    val orderNumber: Long
+    val itemDistributionMode: String
+    val orderPrice: String
+    val orderName: String
+    val orderPhoneNumber: String
+    val orderAddress: String
     val dateCreated: String
     val lastModified: String
     val remoteLastModified: String
