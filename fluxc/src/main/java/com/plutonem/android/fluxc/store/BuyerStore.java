@@ -123,7 +123,7 @@ public class BuyerStore extends Store {
      * Returns all visible buyers as {@link BuyerModel}s.
      */
     public List<BuyerModel> getVisibleBuyers() {
-        return BuyerSqlUtils.getBuyersWith(BuyerModelTable.IS_VISIBLE, true).getAsModel();
+        return BuyerSqlUtils.getBuyersWith(BuyerModelTable.IS_VISIBLE, 1).getAsModel();
     }
 
     /**
