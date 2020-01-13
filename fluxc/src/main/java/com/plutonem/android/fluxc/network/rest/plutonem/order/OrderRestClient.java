@@ -206,7 +206,7 @@ public class OrderRestClient extends BasePlutonemRestClient {
         params.put("shop_name", StringUtils.notNullStr(order.getShopTitle()));
         params.put("product_name", StringUtils.notNullStr(order.getProductDetail()));
         params.put("item_sales_price", StringUtils.notNullStr(order.getItemSalesPrice()));
-        params.put("order_number", order.getOrderNumber());
+        params.put("order_number", StringUtils.notNullStr(String.valueOf(order.getOrderNumber())));
         params.put("item_distribution_mode", StringUtils.notNullStr(order.getItemDistributionMode()));
 
 
