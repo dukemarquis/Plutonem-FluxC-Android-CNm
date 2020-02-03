@@ -26,6 +26,7 @@ import com.plutonem.android.fluxc.store.ListStore.ListError;
 import com.plutonem.android.fluxc.store.ListStore.ListErrorType;
 import com.plutonem.android.fluxc.store.ListStore.ListItemsChangedPayload;
 import com.wellsql.generated.OrderModelTable;
+import com.yarolegovich.wellsql.SelectQuery;
 import com.yarolegovich.wellsql.WellSql;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -42,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -107,6 +109,34 @@ public class OrderStore extends Store {
         }
     }
 
+    public static class RemoteInfoPayload extends Payload<OrderError> {
+        public String info;
+        public OrderModel order;
+        public BuyerModel buyer;
+
+        public RemoteInfoPayload(String info, OrderModel order, BuyerModel buyer) {
+            this.info = info;
+            this.order = order;
+            this.buyer = buyer;
+        }
+    }
+
+    public static class RemoteResultPayload extends Payload<OrderError> {
+        public String resultInfo;
+        public String resultStatus;
+        public String requestInfo;
+        public OrderModel order;
+        public BuyerModel buyer;
+
+        public RemoteResultPayload(String resultInfo, String resultStatus, String requestInfo, OrderModel order, BuyerModel buyer) {
+            this.resultInfo = resultInfo;
+            this.resultStatus = resultStatus;
+            this.requestInfo = requestInfo;
+            this.order = order;
+            this.buyer = buyer;
+        }
+    }
+
     public static class FetchOrderResponsePayload extends RemoteOrderPayload {
         public OrderAction origin = OrderAction.FETCH_ORDER; // Only used to track fetching newly uploaded XML-RPC orders
 
@@ -152,6 +182,18 @@ public class OrderStore extends Store {
 
         public OnOrderSubmitted(OrderModel order) {
             this.order = order;
+        }
+    }
+
+    public static class OnInfoEncrypted extends OnChanged<OrderError> {
+        public String info;
+        public OrderModel order;
+        public BuyerModel buyer;
+
+        public OnInfoEncrypted(String info, OrderModel order, BuyerModel buyer) {
+            this.info = info;
+            this.order = order;
+            this.buyer = buyer;
         }
     }
 
@@ -297,6 +339,10 @@ public class OrderStore extends Store {
             case PUSHED_ORDER:
                 handlePushOrderCompleted((RemoteOrderPayload) action.getPayload());
                 break;
+            case SIGN_INFO:
+                signInfo((RemoteOrderPayload) action.getPayload());
+            case SIGNED_INFO:
+                handleSignInfoCompleted((RemoteInfoPayload) action.getPayload());
             case UPDATE_ORDER:
                 updateOrder((OrderModel) action.getPayload(), true);
                 break;
@@ -385,9 +431,27 @@ public class OrderStore extends Store {
         }
     }
 
+    private void handleSignInfoCompleted(RemoteInfoPayload payload) {
+        if (payload.isError()) {
+            OnOrderSubmitted onOrderSubmitted = new OnOrderSubmitted(payload.order);
+            onOrderSubmitted.error = payload.error;
+            emitChange(onOrderSubmitted);
+        } else {
+            if (payload.buyer.isUsingPnRestApi()) {
+                emitChange(new OnInfoEncrypted(payload.info, payload.order, payload.buyer));
+            }
+        }
+    }
+
     private void pushOrder(RemoteOrderPayload payload) {
         if (payload.buyer.isUsingPnRestApi()) {
             mOrderRestClient.pushOrder(payload.order, payload.buyer);
+        }
+    }
+
+    private void signInfo(RemoteOrderPayload payload) {
+        if (payload.buyer.isUsingPnRestApi()) {
+            mOrderRestClient.signInfo(payload.order, payload.buyer);
         }
     }
 

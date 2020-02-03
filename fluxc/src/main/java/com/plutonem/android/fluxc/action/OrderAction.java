@@ -4,9 +4,10 @@ import com.plutonem.android.fluxc.annotations.Action;
 import com.plutonem.android.fluxc.annotations.ActionEnum;
 import com.plutonem.android.fluxc.annotations.action.IAction;
 import com.plutonem.android.fluxc.model.OrderModel;
-import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListPayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
 @ActionEnum
@@ -18,6 +19,8 @@ public enum OrderAction implements IAction {
     FETCH_ORDER,
     @Action(payloadType = RemoteOrderPayload.class)
     PUSH_ORDER,
+    @Action(payloadType = RemoteOrderPayload.class)
+    SIGN_INFO,
 
     // Remote responses
     @Action(payloadType = FetchOrderListResponsePayload.class)
@@ -26,6 +29,8 @@ public enum OrderAction implements IAction {
     FETCHED_ORDER,
     @Action(payloadType = RemoteOrderPayload.class)
     PUSHED_ORDER,
+    @Action(payloadType = RemoteInfoPayload.class)
+    SIGNED_INFO,
 
     // Local actions
     @Action(payloadType = OrderModel.class)

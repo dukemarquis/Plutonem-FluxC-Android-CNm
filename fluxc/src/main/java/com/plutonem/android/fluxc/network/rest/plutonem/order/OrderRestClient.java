@@ -29,6 +29,7 @@ import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.OrderError;
 import com.plutonem.android.fluxc.store.OrderStore.OrderListItem;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 
 import org.wordpress.android.util.StringUtils;
 
@@ -160,6 +161,42 @@ public class OrderRestClient extends BasePlutonemRestClient {
                         RemoteOrderPayload payload = new RemoteOrderPayload(order, buyer);
                         payload.error = new OrderError(error.apiError, error.message);
                         mDispatcher.dispatch(SubmitActionBuilder.newPushedOrderAction(payload));
+                    }
+                }
+        );
+
+        request.addQueryParameter("context", "edit");
+
+        request.disableRetries();
+        add(request);
+    }
+
+    public void signInfo(final OrderModel order, final BuyerModel buyer) {
+        String url;
+
+        if (order.isLocalDraft()) {
+            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.sign_.getUrlV1_2();
+        } else {
+            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.sign_.getUrlV1_2();
+        }
+
+        Map<String, Object> body = orderModelToParams(order);
+
+        final PlutonemGsonRequest<String> request = PlutonemGsonRequest.buildPostRequest(url, body,
+                String.class,
+                new Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        RemoteInfoPayload payload = new RemoteInfoPayload(response, order, buyer);
+                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+                        RemoteInfoPayload payload = new RemoteInfoPayload(null, order, buyer);
+                        payload.error = new OrderError(error.apiError, error.message);
+                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
                     }
                 }
         );

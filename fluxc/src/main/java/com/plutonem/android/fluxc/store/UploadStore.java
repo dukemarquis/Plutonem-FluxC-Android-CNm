@@ -1,12 +1,11 @@
 package com.plutonem.android.fluxc.store;
 
-import androidx.annotation.NonNull;
-
 import com.plutonem.android.fluxc.Dispatcher;
 import com.plutonem.android.fluxc.action.SubmitAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
 import org.greenrobot.eventbus.Subscribe;
@@ -44,6 +43,9 @@ public class UploadStore extends Store {
             case PUSHED_ORDER:
 //                handleOrderUploaded((RemoteOrderPayload) payload);
                 mDispatcher.dispatch(OrderActionBuilder.newPushedOrderAction((RemoteOrderPayload) payload));
+                break;
+            case SIGNED_INFO:
+                mDispatcher.dispatch(OrderActionBuilder.newSignedInfoAction((RemoteInfoPayload) payload));
                 break;
         }
     }
