@@ -179,12 +179,14 @@ public class OrderRestClient extends BasePlutonemRestClient {
 
         Map<String, Object> body = orderModelToParams(order);
 
-        final PlutonemGsonRequest<String> request = PlutonemGsonRequest.buildPostRequest(url, body,
-                String.class,
-                new Listener<String>() {
+        final PlutonemGsonRequest<InfoPNComRestResponse> request = PlutonemGsonRequest.buildPostRequest(url, body,
+                InfoPNComRestResponse.class,
+                new Listener<InfoPNComRestResponse>() {
                     @Override
-                    public void onResponse(String response) {
-                        RemoteInfoPayload payload = new RemoteInfoPayload(response, order, buyer);
+                    public void onResponse(InfoPNComRestResponse response) {
+                        String encryptedInfo = infoResponseToInfoString(response);
+
+                        RemoteInfoPayload payload = new RemoteInfoPayload(encryptedInfo, order, buyer);
                         mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
                     }
                 },
@@ -251,6 +253,13 @@ public class OrderRestClient extends BasePlutonemRestClient {
         }
 
         return order;
+    }
+
+    private String infoResponseToInfoString(InfoPNComRestResponse from) {
+        String info;
+        info = from.getInfo();
+
+        return info;
     }
 
     private Map<String, Object> orderModelToParams(OrderModel order) {
