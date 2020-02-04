@@ -184,16 +184,16 @@ public class OrderRestClient extends BasePlutonemRestClient {
                 new Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        RemoteInfoPayload payload = new RemoteInfoPayload(response, order, buyer);
-                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
+//                        RemoteInfoPayload payload = new RemoteInfoPayload(response, order, buyer);
+//                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
                     }
                 },
                 new PlutonemErrorListener() {
                     @Override
                     public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
-                        RemoteInfoPayload payload = new RemoteInfoPayload(null, order, buyer);
-                        payload.error = new OrderError(error.apiError, error.message);
-                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
+//                        RemoteInfoPayload payload = new RemoteInfoPayload(null, order, buyer);
+//                        payload.error = new OrderError(error.apiError, error.message);
+//                        mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
                     }
                 }
         );
