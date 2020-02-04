@@ -341,10 +341,13 @@ public class OrderStore extends Store {
                 break;
             case SIGN_INFO:
                 signInfo((RemoteOrderPayload) action.getPayload());
+                break;
             case SIGNED_INFO:
                 handleSignInfoCompleted((RemoteInfoPayload) action.getPayload());
+                break;
             case DECRYPT_RESULT:
                 decryptResult((RemoteResultPayload) action.getPayload());
+                break;
             case UPDATE_ORDER:
                 updateOrder((OrderModel) action.getPayload(), true);
                 break;
