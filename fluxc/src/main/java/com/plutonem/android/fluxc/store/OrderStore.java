@@ -343,6 +343,8 @@ public class OrderStore extends Store {
                 signInfo((RemoteOrderPayload) action.getPayload());
             case SIGNED_INFO:
                 handleSignInfoCompleted((RemoteInfoPayload) action.getPayload());
+            case DECRYPT_RESULT:
+                decryptResult((RemoteResultPayload) action.getPayload());
             case UPDATE_ORDER:
                 updateOrder((OrderModel) action.getPayload(), true);
                 break;
@@ -452,6 +454,12 @@ public class OrderStore extends Store {
     private void signInfo(RemoteOrderPayload payload) {
         if (payload.buyer.isUsingPnRestApi()) {
             mOrderRestClient.signInfo(payload.order, payload.buyer);
+        }
+    }
+
+    private void decryptResult(RemoteResultPayload payload) {
+        if (payload.buyer.isUsingPnRestApi()) {
+            mOrderRestClient.decryptResult(payload.resultInfo, payload.resultStatus, payload.requestInfo, payload.order, payload.buyer);
         }
     }
 

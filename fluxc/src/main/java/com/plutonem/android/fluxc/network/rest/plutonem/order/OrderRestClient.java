@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response.Listener;
 import com.plutonem.android.fluxc.Dispatcher;
+import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
 import com.plutonem.android.fluxc.generated.SubmitActionBuilder;
 import com.plutonem.android.fluxc.generated.endpoint.PLUTONEMREST;
@@ -174,11 +175,7 @@ public class OrderRestClient extends BasePlutonemRestClient {
     public void signInfo(final OrderModel order, final BuyerModel buyer) {
         String url;
 
-        if (order.isLocalDraft()) {
-            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.sign_.getUrlV1_2();
-        } else {
-            url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.sign_.getUrlV1_2();
-        }
+        url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.sign_.getUrlV1_2();
 
         Map<String, Object> body = orderModelToParams(order);
 
@@ -197,6 +194,35 @@ public class OrderRestClient extends BasePlutonemRestClient {
                         RemoteInfoPayload payload = new RemoteInfoPayload(null, order, buyer);
                         payload.error = new OrderError(error.apiError, error.message);
                         mDispatcher.dispatch(SubmitActionBuilder.newSignedInfoAction(payload));
+                    }
+                }
+        );
+
+        request.addQueryParameter("context", "edit");
+
+        request.disableRetries();
+        add(request);
+    }
+
+    public void decryptResult(final String resultInfo, final String resultStatus, final String requestInfo, final OrderModel order,final BuyerModel buyer) {
+        String url;
+
+        url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.decrypt_.getUrlV1_2();
+
+        Map<String, Object> body = makeParams(resultInfo, resultStatus, requestInfo);
+
+        final PlutonemGsonRequest<String> request = PlutonemGsonRequest.buildPostRequest(url, body,
+                String.class,
+                new Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                    }
+                },
+                new PlutonemErrorListener() {
+                    @Override
+                    public void onErrorResponse(@NonNull PlutonemGsonNetworkError error) {
+
                     }
                 }
         );
@@ -253,6 +279,16 @@ public class OrderRestClient extends BasePlutonemRestClient {
         if (!TextUtils.isEmpty(order.getOrderFormat())) {
             params.put("format", order.getOrderFormat());
         }
+
+        return params;
+    }
+
+    private Map<String, Object> makeParams(String resultInfo, String resultStatus, String requestInfo) {
+        Map<String, Object> params = new HashMap<>();
+
+        params.put("result_info", StringUtils.notNullStr(resultInfo));
+        params.put("result_status", StringUtils.notNullStr(resultStatus));
+        params.put("request_info", StringUtils.notNullStr(requestInfo));
 
         return params;
     }

@@ -41,11 +41,14 @@ public class PLUTONEMREST {
                 public PlutonemEndpoint new_;
                 @Endpoint("/buyers/$buyer/orders/sign/")
                 public PlutonemEndpoint sign_;
+                @Endpoint("/buyers/$buyer/orders/decrypt/")
+                public PlutonemEndpoint decrypt_;
 
                 private OrdersEndpoint(String previousEndpoint) {
                     super(previousEndpoint + "orders/");
                     this.new_ = new PlutonemEndpoint(this.getEndpoint() + "new/");
                     this.sign_ = new PlutonemEndpoint(this.getEndpoint() + "sign/");
+                    this.decrypt_ = new PlutonemEndpoint(this.getEndpoint() + "decrypt/");
                 }
 
                 @Endpoint("/buyers/$buyer/orders/$order_ID/")

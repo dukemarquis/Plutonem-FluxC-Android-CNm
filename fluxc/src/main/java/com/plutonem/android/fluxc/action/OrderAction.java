@@ -9,6 +9,7 @@ import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteResultPayload;
 
 @ActionEnum
 public enum OrderAction implements IAction {
@@ -21,6 +22,8 @@ public enum OrderAction implements IAction {
     PUSH_ORDER,
     @Action(payloadType = RemoteOrderPayload.class)
     SIGN_INFO,
+    @Action(payloadType = RemoteResultPayload.class)
+    DECRYPT_RESULT,
 
     // Remote responses
     @Action(payloadType = FetchOrderListResponsePayload.class)
