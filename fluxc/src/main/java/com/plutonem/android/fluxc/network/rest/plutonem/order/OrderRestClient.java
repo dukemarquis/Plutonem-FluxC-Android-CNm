@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response.Listener;
 import com.plutonem.android.fluxc.Dispatcher;
-import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
 import com.plutonem.android.fluxc.generated.SubmitActionBuilder;
 import com.plutonem.android.fluxc.generated.endpoint.PLUTONEMREST;
@@ -29,8 +28,9 @@ import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.OrderError;
 import com.plutonem.android.fluxc.store.OrderStore.OrderListItem;
-import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteDecryptionPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
 import org.wordpress.android.util.StringUtils;
 
@@ -206,19 +206,24 @@ public class OrderRestClient extends BasePlutonemRestClient {
         add(request);
     }
 
-    public void decryptResult(final String resultInfo, final String resultStatus, final String requestInfo, final OrderModel order,final BuyerModel buyer) {
+    public void decryptResult(final String resultInfo, final String resultStatus, final String requestInfo, final OrderModel order, final BuyerModel buyer) {
         String url;
 
         url = PLUTONEMREST.buyers.buyer(buyer.getBuyerId()).orders.decrypt_.getUrlV1_2();
 
         Map<String, Object> body = makeParams(resultInfo, resultStatus, requestInfo);
 
-        final PlutonemGsonRequest<String> request = PlutonemGsonRequest.buildPostRequest(url, body,
-                String.class,
-                new Listener<String>() {
+        final PlutonemGsonRequest<ResultPNComRestResponse> request = PlutonemGsonRequest.buildPostRequest(url, body,
+                ResultPNComRestResponse.class,
+                new Listener<ResultPNComRestResponse>() {
                     @Override
-                    public void onResponse(String response) {
+                    public void onResponse(ResultPNComRestResponse response) {
+                        String code = response.getCode();
+                        String state = response.getState();
+                        String message = response.getMessage();
 
+                        RemoteDecryptionPayload payload = new RemoteDecryptionPayload(code, state, message, order, buyer);
+                        mDispatcher.dispatch(SubmitActionBuilder.newDecryptedResultAction(payload));
                     }
                 },
                 new PlutonemErrorListener() {

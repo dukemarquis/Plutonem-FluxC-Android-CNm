@@ -6,6 +6,7 @@ import com.plutonem.android.fluxc.model.OrderModel;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListPayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteDecryptionPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteResultPayload;
@@ -48,6 +49,10 @@ public class OrderActionBuilder {
 
     public static Action<RemoteInfoPayload> newSignedInfoAction(RemoteInfoPayload payload) {
         return new Action(OrderAction.SIGNED_INFO, payload);
+    }
+
+    public static Action<RemoteDecryptionPayload> newDecryptedResultAction(RemoteDecryptionPayload payload) {
+        return new Action(OrderAction.DECRYPTED_RESULT, payload);
     }
 
     public static Action<OrderModel> newUpdateOrderAction(OrderModel payload) {

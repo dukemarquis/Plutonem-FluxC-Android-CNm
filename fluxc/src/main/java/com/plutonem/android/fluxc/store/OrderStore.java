@@ -137,6 +137,22 @@ public class OrderStore extends Store {
         }
     }
 
+    public static class RemoteDecryptionPayload extends Payload<OrderError> {
+        public String code;
+        public String state;
+        public String message;
+        public OrderModel order;
+        public BuyerModel buyer;
+
+        public RemoteDecryptionPayload(String code, String state, String message, OrderModel order, BuyerModel buyer) {
+            this.code = code;
+            this.state = state;
+            this.message = message;
+            this.order = order;
+            this.buyer = buyer;
+        }
+    }
+
     public static class FetchOrderResponsePayload extends RemoteOrderPayload {
         public OrderAction origin = OrderAction.FETCH_ORDER; // Only used to track fetching newly uploaded XML-RPC orders
 
@@ -192,6 +208,22 @@ public class OrderStore extends Store {
 
         public OnInfoEncrypted(String info, OrderModel order, BuyerModel buyer) {
             this.info = info;
+            this.order = order;
+            this.buyer = buyer;
+        }
+    }
+
+    public static class OnResultDecrypted extends OnChanged<OrderError> {
+        public String code;
+        public String state;
+        public String message;
+        public OrderModel order;
+        public BuyerModel buyer;
+
+        public OnResultDecrypted(String code, String state, String message, OrderModel order, BuyerModel buyer) {
+            this.code = code;
+            this.state = state;
+            this.message = message;
             this.order = order;
             this.buyer = buyer;
         }
@@ -348,6 +380,9 @@ public class OrderStore extends Store {
             case DECRYPT_RESULT:
                 decryptResult((RemoteResultPayload) action.getPayload());
                 break;
+            case DECRYPTED_RESULT:
+                handleDecryptResultCompleted((RemoteDecryptionPayload) action.getPayload());
+                break;
             case UPDATE_ORDER:
                 updateOrder((OrderModel) action.getPayload(), true);
                 break;
@@ -444,6 +479,37 @@ public class OrderStore extends Store {
         } else {
             if (payload.buyer.isUsingPnRestApi()) {
                 emitChange(new OnInfoEncrypted(payload.info, payload.order, payload.buyer));
+            }
+        }
+    }
+
+    private void handleDecryptResultCompleted(RemoteDecryptionPayload payload) {
+        OnResultDecrypted onResultDecrypted = new OnResultDecrypted(payload.code, payload.state,
+                                                                    payload.message, payload.order,
+                                                                    payload.buyer);
+        if (payload.isError()) {
+            onResultDecrypted.error = new OrderError(payload.code, payload.message);
+            emitChange(onResultDecrypted);
+
+            OnOrderSubmitted onOrderSubmitted = new OnOrderSubmitted(payload.order);
+            onOrderSubmitted.error = payload.error;
+            emitChange(onOrderSubmitted);
+        } else {
+            if (payload.buyer.isUsingPnRestApi()) {
+                if (payload.code.equals("9000") && payload.state.equals("success")) {
+                    emitChange(onResultDecrypted);
+
+                    RemoteOrderPayload payload1 = new RemoteOrderPayload(payload.order, payload.buyer);
+                    mDispatcher.dispatch(OrderActionBuilder.newPushOrderAction(payload1));
+                } else {
+                    onResultDecrypted.error = new OrderError(payload.code, payload.message);
+                    emitChange(onResultDecrypted);
+
+                    payload.error = new OrderError(payload.code, payload.message);
+                    OnOrderSubmitted onOrderSubmitted = new OnOrderSubmitted(payload.order);
+                    onOrderSubmitted.error = payload.error;
+                    emitChange(onOrderSubmitted);
+                }
             }
         }
     }

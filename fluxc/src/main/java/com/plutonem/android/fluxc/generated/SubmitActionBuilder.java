@@ -3,6 +3,7 @@ package com.plutonem.android.fluxc.generated;
 import com.plutonem.android.fluxc.action.SubmitAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.ActionBuilder;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteDecryptionPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 
@@ -16,5 +17,9 @@ public class SubmitActionBuilder extends ActionBuilder {
 
     public static Action<RemoteInfoPayload> newSignedInfoAction(RemoteInfoPayload payload) {
         return new Action(SubmitAction.SIGNED_INFO, payload);
+    }
+
+    public static Action<RemoteDecryptionPayload> newDecryptedResultAction(RemoteDecryptionPayload payload) {
+        return new Action(SubmitAction.DECRYPTED_RESULT, payload);
     }
 }

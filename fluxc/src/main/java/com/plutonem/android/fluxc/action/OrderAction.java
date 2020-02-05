@@ -7,6 +7,7 @@ import com.plutonem.android.fluxc.model.OrderModel;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListPayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderResponsePayload;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteDecryptionPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteResultPayload;
@@ -34,6 +35,8 @@ public enum OrderAction implements IAction {
     PUSHED_ORDER,
     @Action(payloadType = RemoteInfoPayload.class)
     SIGNED_INFO,
+    @Action(payloadType = RemoteDecryptionPayload.class)
+    DECRYPTED_RESULT,
 
     // Local actions
     @Action(payloadType = OrderModel.class)

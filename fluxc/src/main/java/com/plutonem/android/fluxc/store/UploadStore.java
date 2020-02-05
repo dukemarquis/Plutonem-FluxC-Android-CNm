@@ -5,6 +5,7 @@ import com.plutonem.android.fluxc.action.SubmitAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
 import com.plutonem.android.fluxc.annotations.action.IAction;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
+import com.plutonem.android.fluxc.store.OrderStore.RemoteDecryptionPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 
@@ -46,6 +47,9 @@ public class UploadStore extends Store {
                 break;
             case SIGNED_INFO:
                 mDispatcher.dispatch(OrderActionBuilder.newSignedInfoAction((RemoteInfoPayload) payload));
+                break;
+            case DECRYPTED_RESULT:
+                mDispatcher.dispatch(OrderActionBuilder.newDecryptedResultAction((RemoteDecryptionPayload) payload));
                 break;
         }
     }
