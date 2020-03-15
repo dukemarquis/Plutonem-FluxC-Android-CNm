@@ -60,7 +60,7 @@ public class Authenticator {
 
     public TokenRequest makeRequest(String username, String password, String twoStepCode, boolean shouldSendTwoStepSMS,
                                     Listener listener, ErrorListener errorListener) {
-        return new PasswordRequest(null, null, username, password, twoStepCode,
+        return new PasswordRequest("client_id", "client_secret", username, password, twoStepCode,
                 shouldSendTwoStepSMS, listener, errorListener);
     }
 
