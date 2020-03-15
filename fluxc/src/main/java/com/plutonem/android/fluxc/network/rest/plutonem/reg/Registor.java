@@ -137,8 +137,8 @@ public class Registor {
         }
 
         public static Token fromJSONObject(JSONObject tokenJSON) throws JSONException {
-            return new Token(tokenJSON.getString(ACCESS_TOKEN_FIELD_NAME), tokenJSON.getString(SCOPE_FIELD_NAME), tokenJSON.getString(
-                    TOKEN_TYPE_FIELD_NAME));
+            return new Token(tokenJSON.getString(ACCESS_TOKEN_FIELD_NAME), tokenJSON.getString(SCOPE_FIELD_NAME),
+                    tokenJSON.getString(TOKEN_TYPE_FIELD_NAME));
         }
     }
 

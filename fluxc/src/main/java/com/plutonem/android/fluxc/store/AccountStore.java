@@ -17,6 +17,7 @@ import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClien
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient.IsAvailable;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient.IsAvailableResponsePayload;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
+import com.plutonem.android.fluxc.network.rest.plutonem.auth.Authenticator;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor.Token;
 import com.plutonem.android.fluxc.persistence.AccountSqlUtils;
@@ -35,6 +36,18 @@ import javax.inject.Singleton;
 @Singleton
 public class AccountStore extends Store {
     // Payloads
+    public static class AuthenticatePayload extends Payload<BaseNetworkError> {
+        public String username;
+        public String password;
+        public String twoStepCode;
+        public boolean shouldSendTwoStepSms;
+        public Action nextAction;
+        public AuthenticatePayload(@NonNull String username, @NonNull String password) {
+            this.username = username;
+            this.password = password;
+        }
+    }
+
     public static class RegisterPayload extends Payload<BaseNetworkError> {
         public String phone;
         public String password;
@@ -107,6 +120,31 @@ public class AccountStore extends Store {
     }
 
     // Enums
+    public enum AuthenticationErrorType {
+        // From response's "error" field
+        AUTHORIZATION_REQUIRED,
+        INVALID_REQUEST,
+        INVALID_TOKEN,
+
+        // From response's "message" field - sadly... (be careful with i18n)
+        INCORRECT_USERNAME_OR_PASSWORD,
+
+        // Generic error
+        GENERIC_ERROR;
+
+        public static AuthenticationErrorType fromString(String string) {
+            if (string != null) {
+                for (AuthenticationErrorType v : AuthenticationErrorType.values()) {
+                    if (string.equalsIgnoreCase(v.name())) {
+                        return v;
+                    }
+                }
+            }
+            return GENERIC_ERROR;
+        }
+    }
+
+    // Enums
     public enum RegistrationErrorType {
         // From response's "error" field
         INVALID_REQUEST,
@@ -120,31 +158,6 @@ public class AccountStore extends Store {
         public static RegistrationErrorType fromString(String string) {
             if (string != null) {
                 for (RegistrationErrorType v : RegistrationErrorType.values()) {
-                    if (string.equalsIgnoreCase(v.name())) {
-                        return v;
-                    }
-                }
-            }
-            return GENERIC_ERROR;
-        }
-    }
-
-    // Enums
-    public enum AuthenticationErrorType {
-        // From response's "error" field
-        AUTHORIZATION_REQUIRED,
-//        INVALID_REQUEST,
-        INVALID_TOKEN,
-
-        // From response's "message" field - sadly... (be careful with i18n)
-//        INCORRECT_USERNAME_OR_PASSWORD,
-
-        // Generic error
-        GENERIC_ERROR;
-
-        public static AuthenticationErrorType fromString(String string) {
-            if (string != null) {
-                for (AuthenticationErrorType v : AuthenticationErrorType.values()) {
                     if (string.equalsIgnoreCase(v.name())) {
                         return v;
                     }
@@ -198,14 +211,16 @@ public class AccountStore extends Store {
 
     // Fields
     private AccountRestClient mAccountRestClient;
+    private Authenticator mAuthenticator;
     private Registor mRegistor;
     private AccountModel mAccount;
     private AccessToken mAccessToken;
 
     @Inject
     public AccountStore(Dispatcher dispatcher, AccountRestClient accountRestClient,
-                        AccessToken accessToken, Registor registor) {
+                        Authenticator authenticator, Registor registor, AccessToken accessToken) {
         super(dispatcher);
+        mAuthenticator = authenticator;
         mRegistor = registor;
         mAccountRestClient = accountRestClient;
         mAccount = loadAccount();
@@ -265,6 +280,9 @@ public class AccountStore extends Store {
 
     private void onAuthenticationAction(AuthenticationAction actionType, Object payload) {
         switch (actionType) {
+            case AUTHENTICATE:
+                authenticate((AuthenticatePayload) payload);
+                break;
             case AUTHENTICATE_ERROR:
                 handleAuthenticateError((AuthenticateErrorPayload) payload);
                 break;
@@ -359,6 +377,30 @@ public class AccountStore extends Store {
     private AccountModel loadAccount() {
         AccountModel account = AccountSqlUtils.getDefaultAccount();
         return account == null ? new AccountModel() : account;
+    }
+
+    private void authenticate(final AuthenticatePayload payload) {
+        mAuthenticator.authenticate(payload.username, payload.password, payload.twoStepCode,
+                payload.shouldSendTwoStepSms, new Authenticator.Listener() {
+                    @Override
+                    public void onResponse(Token token) {
+                        mAccessToken.set(token.getAccessToken());
+                        if (payload.nextAction != null) {
+                            mDispatcher.dispatch(payload.nextAction);
+                        }
+                        emitChange(new OnAuthenticationChanged());
+                    }
+                }, new Authenticator.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError volleyError) {
+                        AppLog.e(T.API, "Authentication error");
+                        OnAuthenticationChanged event = new OnAuthenticationChanged();
+                        event.error = new AuthenticationError(
+                                Authenticator.volleyErrorToAuthenticationError(volleyError),
+                                Authenticator.volleyErrorToErrorMessage(volleyError));
+                        emitChange(event);
+                    }
+                });
     }
 
     private void register(final RegisterPayload payload) {

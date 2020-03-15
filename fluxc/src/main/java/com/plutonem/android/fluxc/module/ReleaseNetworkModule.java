@@ -13,6 +13,7 @@ import com.plutonem.android.fluxc.network.OkHttpStack;
 import com.plutonem.android.fluxc.network.UserAgent;
 import com.plutonem.android.fluxc.network.rest.plutonem.account.AccountRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.auth.AccessToken;
+import com.plutonem.android.fluxc.network.rest.plutonem.auth.Authenticator;
 import com.plutonem.android.fluxc.network.rest.plutonem.buyer.BuyerRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.order.OrderRestClient;
 import com.plutonem.android.fluxc.network.rest.plutonem.reg.Registor;
@@ -55,6 +56,13 @@ public class ReleaseNetworkModule {
     public RequestQueue provideRequestQueueCustomSSL(@Named("custom-ssl") OkHttpClient.Builder okHttpClientBuilder,
                                                      Context appContext) {
         return newRequestQueue(okHttpClientBuilder, appContext);
+    }
+
+    @Singleton
+    @Provides
+    public Authenticator provideAuthenticator(Context appContext, Dispatcher dispatcher,
+                                              @Named("regular") RequestQueue requestQueue) {
+        return new Authenticator(appContext, dispatcher, requestQueue);
     }
 
     @Singleton
