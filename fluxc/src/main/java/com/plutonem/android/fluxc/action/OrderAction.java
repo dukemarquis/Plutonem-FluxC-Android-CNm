@@ -42,5 +42,7 @@ public enum OrderAction implements IAction {
     @Action(payloadType = OrderModel.class)
     UPDATE_ORDER,
     @Action(payloadType = OrderModel.class)
-    REMOVE_ORDER
+    REMOVE_ORDER,
+    @Action
+    REMOVE_ALL_ORDERS
 }

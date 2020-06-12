@@ -22,5 +22,9 @@ public enum AccountAction implements IAction {
     @Action(payloadType = AccountRestPayload.class)
     FETCHED_ACCOUNT,        // response received from Account fetch request
     @Action(payloadType = AccountRestPayload.class)
-    FETCHED_SETTINGS        // response received from Account Settings fetch
+    FETCHED_SETTINGS,       // response received from Account Settings fetch
+
+    // Local actions
+    @Action
+    SIGN_OUT                // delete persisted Account, reset in-memory Account, delete access token
 }

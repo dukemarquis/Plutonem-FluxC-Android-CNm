@@ -38,4 +38,8 @@ public final class AccountActionBuilder extends ActionBuilder {
     public static Action<IsAvailableResponsePayload> newCheckedIsAvailableAction(IsAvailableResponsePayload payload) {
         return new Action(AccountAction.CHECKED_IS_AVAILABLE, payload);
     }
+
+    public static Action<Void> newSignOutAction() {
+        return generateNoPayloadAction(AccountAction.SIGN_OUT);
+    }
 }

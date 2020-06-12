@@ -2,6 +2,7 @@ package com.plutonem.android.fluxc.generated;
 
 import com.plutonem.android.fluxc.action.OrderAction;
 import com.plutonem.android.fluxc.annotations.action.Action;
+import com.plutonem.android.fluxc.annotations.action.ActionBuilder;
 import com.plutonem.android.fluxc.model.OrderModel;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListPayload;
 import com.plutonem.android.fluxc.store.OrderStore.FetchOrderListResponsePayload;
@@ -11,7 +12,7 @@ import com.plutonem.android.fluxc.store.OrderStore.RemoteInfoPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteOrderPayload;
 import com.plutonem.android.fluxc.store.OrderStore.RemoteResultPayload;
 
-public class OrderActionBuilder {
+public class OrderActionBuilder extends ActionBuilder {
     public OrderActionBuilder() {
     }
 
@@ -61,5 +62,9 @@ public class OrderActionBuilder {
 
     public static Action<OrderModel> newRemoveOrderAction(OrderModel payload) {
         return new Action(OrderAction.REMOVE_ORDER, payload);
+    }
+
+    public static Action<Void> newRemoveAllOrdersAction() {
+        return generateNoPayloadAction(OrderAction.REMOVE_ALL_ORDERS);
     }
 }

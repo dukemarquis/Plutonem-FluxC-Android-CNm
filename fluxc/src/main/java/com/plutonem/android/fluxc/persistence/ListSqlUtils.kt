@@ -77,4 +77,11 @@ class ListSqlUtils @Inject constructor() {
                 .execute()
         }
     }
+
+    /**
+     * This function deletes all [ListModel] records from the DB.
+     */
+    fun deleteAllLists() {
+        WellSql.delete(ListModel::class.java).execute()
+    }
 }

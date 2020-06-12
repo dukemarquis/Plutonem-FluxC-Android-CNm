@@ -20,5 +20,7 @@ public enum BuyerAction implements IAction {
 
     // Local actions
     @Action(payloadType = BuyerModel.class)
-    UPDATE_BUYER
+    UPDATE_BUYER,
+    @Action
+    REMOVE_PN_BUYERS
 }

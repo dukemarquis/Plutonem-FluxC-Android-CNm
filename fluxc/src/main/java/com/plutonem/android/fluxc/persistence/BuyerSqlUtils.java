@@ -54,7 +54,7 @@ public class BuyerSqlUtils {
             }
         }
 
-        // If the site already exist and has an id, we want to update it.
+        // If the buyer already exist and has an id, we want to update it.
         List<BuyerModel> buyerResult = WellSql.select(BuyerModel.class)
                 .where().beginGroup()
                 .equals(BuyerModelTable.ID, buyer.getId())
@@ -103,6 +103,13 @@ public class BuyerSqlUtils {
         return WellSql.delete(BuyerModel.class)
                 .where().equals(BuyerModelTable.ID, buyer.getId()).endWhere()
                 .execute();
+    }
+
+    public static SelectQuery<BuyerModel> getBuyersAccessedViaPNRest() {
+        return WellSql.select(BuyerModel.class)
+                .where().beginGroup()
+                .equals(BuyerModelTable.ORIGIN, BuyerModel.ORIGIN_PN_REST)
+                .endGroup().endWhere();
     }
 
     /**

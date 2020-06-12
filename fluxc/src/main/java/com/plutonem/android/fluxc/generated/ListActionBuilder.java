@@ -22,4 +22,8 @@ public final class ListActionBuilder extends ActionBuilder {
     public static Action<RemoveExpiredListsPayload> newRemoveExpiredListsAction(RemoveExpiredListsPayload payload) {
         return new Action(ListAction.REMOVE_EXPIRED_LISTS, payload);
     }
+
+    public static Action<Void> newRemoveAllListsAction() {
+        return generateNoPayloadAction(ListAction.REMOVE_ALL_LISTS);
+    }
 }

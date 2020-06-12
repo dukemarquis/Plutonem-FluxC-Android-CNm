@@ -25,4 +25,8 @@ public final class BuyerActionBuilder extends ActionBuilder {
     public static Action<BuyerModel> newUpdateBuyerAction(BuyerModel payload) {
         return new Action(BuyerAction.UPDATE_BUYER, payload);
     }
+
+    public static Action<Void> newRemovePnBuyersAction() {
+        return generateNoPayloadAction(BuyerAction.REMOVE_PN_BUYERS);
+    }
 }

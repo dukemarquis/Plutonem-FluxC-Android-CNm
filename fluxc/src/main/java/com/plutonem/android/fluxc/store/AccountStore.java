@@ -255,6 +255,9 @@ public class AccountStore extends Store {
             case FETCH_SETTINGS:
                 mAccountRestClient.fetchAccountSettings();
                 break;
+            case SIGN_OUT:
+                signOut();
+                break;
             case FETCHED_SETTINGS:
                 handleFetchSettingsCompleted((AccountRestPayload) payload);
                 break;
@@ -351,6 +354,22 @@ public class AccountStore extends Store {
         OnAccountChanged event = new OnAccountChanged();
         event.error = new AccountError(errorType, "");
         emitChange(event);
+    }
+
+    private void clearAccountAndAccessToken() {
+        // Remove Account
+        AccountSqlUtils.deleteAccount(mAccount);
+        mAccount.init();
+        // Remove authentication token
+        mAccessToken.set(null);
+    }
+
+    private void signOut() {
+        clearAccountAndAccessToken();
+        OnAccountChanged accountChanged = new OnAccountChanged();
+        accountChanged.accountInfosChanged = true;
+        emitChange(accountChanged);
+        emitChange(new OnAuthenticationChanged());
     }
 
     public AccountModel getAccount() {

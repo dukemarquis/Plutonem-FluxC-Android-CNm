@@ -10,6 +10,7 @@ import com.plutonem.android.fluxc.action.ListAction
 import com.plutonem.android.fluxc.action.ListAction.FETCHED_LIST_ITEMS
 import com.plutonem.android.fluxc.action.ListAction.LIST_ITEMS_CHANGED
 import com.plutonem.android.fluxc.action.ListAction.REMOVE_EXPIRED_LISTS
+import com.plutonem.android.fluxc.action.ListAction.REMOVE_ALL_LISTS
 import com.plutonem.android.fluxc.annotations.action.Action
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.RemoteId
 import com.plutonem.android.fluxc.model.list.*
@@ -54,6 +55,7 @@ class ListStore @Inject constructor(
             FETCHED_LIST_ITEMS -> handleFetchedListItems(action.payload as FetchedListItemsPayload)
             LIST_ITEMS_CHANGED -> handleListItemsChanged(action.payload as ListItemsChangedPayload)
             REMOVE_EXPIRED_LISTS -> handleRemoveExpiredLists(action.payload as RemoveExpiredListsPayload)
+            REMOVE_ALL_LISTS -> handleRemoveAllLists()
         }
     }
 
@@ -267,6 +269,15 @@ class ListStore @Inject constructor(
      */
     private fun handleRemoveExpiredLists(payload: RemoveExpiredListsPayload) {
         listSqlUtils.deleteExpiredLists(payload.expirationDuration)
+    }
+
+    /**
+     * Handles the [ListAction.REMOVE_ALL_LISTS] action.
+     *
+     * It simply deletes every [ListModel] in the DB.
+     */
+    private fun handleRemoveAllLists() {
+        listSqlUtils.deleteAllLists()
     }
 
     /**

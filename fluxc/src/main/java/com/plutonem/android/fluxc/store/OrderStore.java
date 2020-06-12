@@ -12,6 +12,7 @@ import com.plutonem.android.fluxc.generated.ListActionBuilder;
 import com.plutonem.android.fluxc.generated.OrderActionBuilder;
 import com.plutonem.android.fluxc.model.BuyerModel;
 import com.plutonem.android.fluxc.model.CauseOfOnOrderChanged;
+import com.plutonem.android.fluxc.model.CauseOfOnOrderChanged.RemoveAllOrders;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId;
 import com.plutonem.android.fluxc.model.LocalOrRemoteId.LocalId;
 import com.plutonem.android.fluxc.model.OrderModel;
@@ -389,6 +390,9 @@ public class OrderStore extends Store {
             case REMOVE_ORDER:
                 removeOrder((OrderModel) action.getPayload());
                 break;
+            case REMOVE_ALL_ORDERS:
+                removeAllOrders();
+                break;
         }
     }
 
@@ -554,5 +558,11 @@ public class OrderStore extends Store {
         CauseOfOnOrderChanged causeOfChange = new CauseOfOnOrderChanged.RemoveOrder(order.getId(), order.getRemoteOrderId());
         OnOrderChanged onOrderChanged = new OnOrderChanged(causeOfChange, rowsAffected);
         emitChange(onOrderChanged);
+    }
+
+    private void removeAllOrders() {
+        int rowsAffected = mOrderSqlUtils.deleteAllOrders();
+        OnOrderChanged event = new OnOrderChanged(RemoveAllOrders.INSTANCE, rowsAffected);
+        emitChange(event);
     }
 }

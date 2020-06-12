@@ -55,6 +55,14 @@ public class BuyerStore extends Store {
         }
     }
 
+    public static class OnBuyerRemoved extends OnChanged<BuyerError> {
+        public int mRowsAffected;
+
+        public OnBuyerRemoved(int rowsAffected) {
+            mRowsAffected = rowsAffected;
+        }
+    }
+
     public static class UpdateBuyersResult {
         public int rowsAffected = 0;
         public boolean duplicateBuyerFound = false;
@@ -165,6 +173,9 @@ public class BuyerStore extends Store {
             case UPDATE_BUYER:
                 updateBuyer((BuyerModel) action.getPayload());
                 break;
+            case REMOVE_PN_BUYERS:
+                removePNBuyers();
+                break;
         }
     }
 
@@ -215,5 +226,21 @@ public class BuyerStore extends Store {
             }
         }
         return result;
+    }
+
+    private void removePNBuyers() {
+        // Logging out of PN. Drop all PN buyers
+        // REST API only
+        List<BuyerModel> pnBuyers = BuyerSqlUtils.getBuyersAccessedViaPNRest().getAsModel();
+        int rowsAffected = removeBuyers(pnBuyers);
+        emitChange(new OnBuyerRemoved(rowsAffected));
+    }
+
+    private int removeBuyers(List<BuyerModel> buyers) {
+        int rowsAffected = 0;
+        for (BuyerModel buyer : buyers) {
+            rowsAffected += BuyerSqlUtils.deleteBuyer(buyer);
+        }
+        return rowsAffected;
     }
 }
