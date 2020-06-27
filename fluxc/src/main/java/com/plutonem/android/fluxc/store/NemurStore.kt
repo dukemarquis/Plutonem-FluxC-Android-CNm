@@ -18,6 +18,7 @@ class NemurStore
     interface NemurType
 
     enum class ItemType : NemurType {
+        FEATURED_MEDIAS,
         BASE_INFOS,
         GUARANTEES,
         PARAMETERS
