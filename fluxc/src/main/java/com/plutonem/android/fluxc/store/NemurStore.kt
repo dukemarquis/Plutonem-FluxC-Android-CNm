@@ -21,6 +21,7 @@ class NemurStore
         FEATURED_MEDIAS,
         BASE_INFOS,
         GUARANTEES,
-        PARAMETERS
+        PARAMETERS,
+        DETAILS
     }
 }
